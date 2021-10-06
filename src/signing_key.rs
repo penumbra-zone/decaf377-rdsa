@@ -3,9 +3,9 @@ use std::{
     marker::PhantomData,
 };
 
+use ark_ff::PrimeField;
 use decaf377::{Fr, FrExt};
 use rand_core::{CryptoRng, RngCore};
-use ark_ff::PrimeField;
 
 use crate::{Domain, Error, Randomizer, Signature, SpendAuth, VerificationKey};
 
@@ -22,6 +22,12 @@ pub struct SigningKey<D: Domain> {
 
 impl<'a, D: Domain> From<&'a SigningKey<D>> for VerificationKey<D> {
     fn from(sk: &'a SigningKey<D>) -> VerificationKey<D> {
+        sk.pk.clone()
+    }
+}
+
+impl<'a, D: Domain> From<SigningKey<D>> for VerificationKey<D> {
+    fn from(sk: SigningKey<D>) -> VerificationKey<D> {
         sk.pk.clone()
     }
 }
