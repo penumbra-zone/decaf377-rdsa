@@ -3,53 +3,50 @@ use std::{
     marker::PhantomData,
 };
 
-use crate::{Error, Randomizer, Scalar, SigType, Signature, SpendAuth, VerificationKey};
-
+use decaf377::{Fr, FrExt};
 use rand_core::{CryptoRng, RngCore};
+use ark_ff::PrimeField;
+
+use crate::{Domain, Error, Randomizer, Signature, SpendAuth, VerificationKey};
 
 /// A RedJubJub signing key.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(try_from = "SerdeHelper"))]
 #[cfg_attr(feature = "serde", serde(into = "SerdeHelper"))]
-#[cfg_attr(feature = "serde", serde(bound = "T: SigType"))]
-pub struct SigningKey<T: SigType> {
-    sk: Scalar,
-    pk: VerificationKey<T>,
+#[cfg_attr(feature = "serde", serde(bound = "D: Domain"))]
+pub struct SigningKey<D: Domain> {
+    sk: Fr,
+    pk: VerificationKey<D>,
 }
 
-impl<'a, T: SigType> From<&'a SigningKey<T>> for VerificationKey<T> {
-    fn from(sk: &'a SigningKey<T>) -> VerificationKey<T> {
+impl<'a, D: Domain> From<&'a SigningKey<D>> for VerificationKey<D> {
+    fn from(sk: &'a SigningKey<D>) -> VerificationKey<D> {
         sk.pk.clone()
     }
 }
 
-impl<T: SigType> From<SigningKey<T>> for [u8; 32] {
-    fn from(sk: SigningKey<T>) -> [u8; 32] {
+impl<D: Domain> From<SigningKey<D>> for [u8; 32] {
+    fn from(sk: SigningKey<D>) -> [u8; 32] {
         sk.sk.to_bytes()
     }
 }
 
-impl<T: SigType> TryFrom<[u8; 32]> for SigningKey<T> {
+impl<D: Domain> TryFrom<[u8; 32]> for SigningKey<D> {
     type Error = Error;
 
     fn try_from(bytes: [u8; 32]) -> Result<Self, Self::Error> {
-        // XXX-jubjub: this should not use CtOption
-        let maybe_sk = Scalar::from_bytes(&bytes);
-        if maybe_sk.is_some().into() {
-            let sk = maybe_sk.unwrap();
-            let pk = VerificationKey::from(&sk);
-            Ok(SigningKey { sk, pk })
-        } else {
-            Err(Error::MalformedSigningKey)
-        }
+        use ark_serialize::CanonicalDeserialize;
+        let sk = Fr::deserialize(&bytes[..]).map_err(|_| Error::MalformedSigningKey)?;
+        let pk = VerificationKey::from(&sk);
+        Ok(SigningKey { sk, pk })
     }
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct SerdeHelper([u8; 32]);
 
-impl<T: SigType> TryFrom<SerdeHelper> for SigningKey<T> {
+impl<D: Domain> TryFrom<SerdeHelper> for SigningKey<D> {
     type Error = Error;
 
     fn try_from(helper: SerdeHelper) -> Result<Self, Self::Error> {
@@ -57,8 +54,8 @@ impl<T: SigType> TryFrom<SerdeHelper> for SigningKey<T> {
     }
 }
 
-impl<T: SigType> From<SigningKey<T>> for SerdeHelper {
-    fn from(sk: SigningKey<T>) -> Self {
+impl<D: Domain> From<SigningKey<D>> for SerdeHelper {
+    fn from(sk: SigningKey<D>) -> Self {
         Self(sk.into())
     }
 }
@@ -66,31 +63,33 @@ impl<T: SigType> From<SigningKey<T>> for SerdeHelper {
 impl SigningKey<SpendAuth> {
     /// Randomize this public key with the given `randomizer`.
     pub fn randomize(&self, randomizer: &Randomizer) -> SigningKey<SpendAuth> {
-        let sk = &self.sk + randomizer;
+        let sk = self.sk + randomizer;
         let pk = VerificationKey::from(&sk);
         SigningKey { sk, pk }
     }
 }
 
-impl<T: SigType> SigningKey<T> {
+impl<D: Domain> SigningKey<D> {
     /// Generate a new signing key.
-    pub fn new<R: RngCore + CryptoRng>(mut rng: R) -> SigningKey<T> {
+    pub fn new<R: RngCore + CryptoRng>(mut rng: R) -> SigningKey<D> {
         let sk = {
             let mut bytes = [0; 64];
             rng.fill_bytes(&mut bytes);
-            Scalar::from_bytes_wide(&bytes)
+            Fr::from_le_bytes_mod_order(&bytes[..])
         };
         let pk = VerificationKey::from(&sk);
         SigningKey { sk, pk }
     }
 
-    /// Create a signature of type `T` on `msg` using this `SigningKey`.
+    /// Create a signature for domain `D` on `msg` using this `SigningKey`.
     // Similar to signature::Signer but without boxed errors.
-    pub fn sign<R: RngCore + CryptoRng>(&self, mut rng: R, msg: &[u8]) -> Signature<T> {
+    pub fn sign<R: RngCore + CryptoRng>(&self, mut rng: R, msg: &[u8]) -> Signature<D> {
         use crate::HStar;
 
-        // Choose a byte sequence uniformly at random of length
-        // (\ell_H + 128)/8 bytes.  For RedJubjub this is (512 + 128)/8 = 80.
+        // Choose a byte sequence uniformly at random of length (\ell_H + 128)/8
+        // bytes, where \ell_H is the length of the hash output in bits.
+        //
+        // For decaf377-reddsa this is (512 + 128)/8 = 80.
         let random_bytes = {
             let mut bytes = [0; 80];
             rng.fill_bytes(&mut bytes);
@@ -103,7 +102,7 @@ impl<T: SigType> SigningKey<T> {
             .update(msg)
             .finalize();
 
-        let r_bytes = jubjub::AffinePoint::from(&T::basepoint() * &nonce).to_bytes();
+        let r_bytes = (&D::basepoint() * &nonce).compress().0;
 
         let c = HStar::default()
             .update(&r_bytes[..])
@@ -111,7 +110,7 @@ impl<T: SigType> SigningKey<T> {
             .update(msg)
             .finalize();
 
-        let s_bytes = (&nonce + &(&c * &self.sk)).to_bytes();
+        let s_bytes = (nonce + (c * self.sk)).to_bytes();
 
         Signature {
             r_bytes,

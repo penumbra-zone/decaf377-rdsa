@@ -4,7 +4,9 @@ use std::{
     marker::PhantomData,
 };
 
-use crate::{Error, Randomizer, Scalar, SigType, Signature, SpendAuth};
+use decaf377::{Fr, FrExt};
+
+use crate::{domain::Sealed, Domain, Error, Randomizer, Signature, SpendAuth};
 
 /// A refinement type for `[u8; 32]` indicating that the bytes represent
 /// an encoding of a RedJubJub verification key.
@@ -14,13 +16,13 @@ use crate::{Error, Randomizer, Scalar, SigType, Signature, SpendAuth};
 /// used in signature verification.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct VerificationKeyBytes<T: SigType> {
+pub struct VerificationKeyBytes<D: Domain> {
     pub(crate) bytes: [u8; 32],
-    pub(crate) _marker: PhantomData<T>,
+    pub(crate) _marker: PhantomData<D>,
 }
 
-impl<T: SigType> From<[u8; 32]> for VerificationKeyBytes<T> {
-    fn from(bytes: [u8; 32]) -> VerificationKeyBytes<T> {
+impl<D: Domain> From<[u8; 32]> for VerificationKeyBytes<D> {
+    fn from(bytes: [u8; 32]) -> VerificationKeyBytes<D> {
         VerificationKeyBytes {
             bytes,
             _marker: PhantomData,
@@ -28,13 +30,13 @@ impl<T: SigType> From<[u8; 32]> for VerificationKeyBytes<T> {
     }
 }
 
-impl<T: SigType> From<VerificationKeyBytes<T>> for [u8; 32] {
-    fn from(refined: VerificationKeyBytes<T>) -> [u8; 32] {
+impl<D: Domain> From<VerificationKeyBytes<D>> for [u8; 32] {
+    fn from(refined: VerificationKeyBytes<D>) -> [u8; 32] {
         refined.bytes
     }
 }
 
-impl<T: SigType> Hash for VerificationKeyBytes<T> {
+impl<D: Domain> Hash for VerificationKeyBytes<D> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.bytes.hash(state);
         self._marker.hash(state);
@@ -56,50 +58,40 @@ impl<T: SigType> Hash for VerificationKeyBytes<T> {
 /// 2. The check that the verification key is not a point of small order.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "serde", serde(try_from = "VerificationKeyBytes<T>"))]
-#[cfg_attr(feature = "serde", serde(into = "VerificationKeyBytes<T>"))]
-#[cfg_attr(feature = "serde", serde(bound = "T: SigType"))]
-pub struct VerificationKey<T: SigType> {
-    // XXX-jubjub: this should just be Point
-    pub(crate) point: jubjub::ExtendedPoint,
-    pub(crate) bytes: VerificationKeyBytes<T>,
+#[cfg_attr(feature = "serde", serde(try_from = "VerificationKeyBytes<D>"))]
+#[cfg_attr(feature = "serde", serde(into = "VerificationKeyBytes<D>"))]
+#[cfg_attr(feature = "serde", serde(bound = "D: Domain"))]
+pub struct VerificationKey<D: Domain> {
+    pub(crate) point: decaf377::Element,
+    pub(crate) bytes: VerificationKeyBytes<D>,
 }
 
-impl<T: SigType> From<VerificationKey<T>> for VerificationKeyBytes<T> {
-    fn from(pk: VerificationKey<T>) -> VerificationKeyBytes<T> {
+impl<D: Domain> From<VerificationKey<D>> for VerificationKeyBytes<D> {
+    fn from(pk: VerificationKey<D>) -> VerificationKeyBytes<D> {
         pk.bytes
     }
 }
 
-impl<T: SigType> From<VerificationKey<T>> for [u8; 32] {
-    fn from(pk: VerificationKey<T>) -> [u8; 32] {
+impl<D: Domain> From<VerificationKey<D>> for [u8; 32] {
+    fn from(pk: VerificationKey<D>) -> [u8; 32] {
         pk.bytes.bytes
     }
 }
 
-impl<T: SigType> TryFrom<VerificationKeyBytes<T>> for VerificationKey<T> {
+impl<D: Domain> TryFrom<VerificationKeyBytes<D>> for VerificationKey<D> {
     type Error = Error;
 
-    fn try_from(bytes: VerificationKeyBytes<T>) -> Result<Self, Self::Error> {
-        // XXX-jubjub: this should not use CtOption
-        // XXX-jubjub: this takes ownership of bytes, while Fr doesn't.
-        // This checks that the encoding is canonical...
-        let maybe_point = jubjub::AffinePoint::from_bytes(bytes.bytes);
-        if maybe_point.is_some().into() {
-            let point: jubjub::ExtendedPoint = maybe_point.unwrap().into();
-            // This checks that the verification key is not of small order.
-            if <bool>::from(point.is_small_order()) == false {
-                Ok(VerificationKey { point, bytes })
-            } else {
-                Err(Error::MalformedVerificationKey)
-            }
-        } else {
-            Err(Error::MalformedVerificationKey)
-        }
+    fn try_from(bytes: VerificationKeyBytes<D>) -> Result<Self, Self::Error> {
+        // Note: the identity element is allowed as a verification key.
+        let point = decaf377::Encoding(bytes.bytes)
+            .decompress()
+            .map_err(|_| Error::MalformedVerificationKey)?;
+
+        Ok(VerificationKey { point, bytes })
     }
 }
 
-impl<T: SigType> TryFrom<[u8; 32]> for VerificationKey<T> {
+impl<D: Domain> TryFrom<[u8; 32]> for VerificationKey<D> {
     type Error = Error;
 
     fn try_from(bytes: [u8; 32]) -> Result<Self, Self::Error> {
@@ -113,21 +105,20 @@ impl VerificationKey<SpendAuth> {
     ///
     /// Randomization is only supported for `SpendAuth` keys.
     pub fn randomize(&self, randomizer: &Randomizer) -> VerificationKey<SpendAuth> {
-        use crate::private::Sealed;
-        let point = &self.point + &(&SpendAuth::basepoint() * randomizer);
+        let point = self.point + (SpendAuth::basepoint() * randomizer);
         let bytes = VerificationKeyBytes {
-            bytes: jubjub::AffinePoint::from(&point).to_bytes(),
+            bytes: point.compress().into(),
             _marker: PhantomData,
         };
         VerificationKey { bytes, point }
     }
 }
 
-impl<T: SigType> VerificationKey<T> {
-    pub(crate) fn from(s: &Scalar) -> VerificationKey<T> {
-        let point = &T::basepoint() * s;
+impl<D: Domain> VerificationKey<D> {
+    pub(crate) fn from(s: &Fr) -> VerificationKey<D> {
+        let point = &D::basepoint() * s;
         let bytes = VerificationKeyBytes {
-            bytes: jubjub::AffinePoint::from(&point).to_bytes(),
+            bytes: point.compress().into(),
             _marker: PhantomData,
         };
         VerificationKey { bytes, point }
@@ -135,7 +126,7 @@ impl<T: SigType> VerificationKey<T> {
 
     /// Verify a purported `signature` over `msg` made by this verification key.
     // This is similar to impl signature::Verifier but without boxed errors
-    pub fn verify(&self, msg: &[u8], signature: &Signature<T>) -> Result<(), Error> {
+    pub fn verify(&self, msg: &[u8], signature: &Signature<D>) -> Result<(), Error> {
         use crate::HStar;
         let c = HStar::default()
             .update(&signature.r_bytes[..])
@@ -147,40 +138,21 @@ impl<T: SigType> VerificationKey<T> {
 
     /// Verify a purported `signature` with a prehashed challenge.
     #[allow(non_snake_case)]
-    pub(crate) fn verify_prehashed(
-        &self,
-        signature: &Signature<T>,
-        c: Scalar,
-    ) -> Result<(), Error> {
-        let r = {
-            // XXX-jubjub: should not use CtOption here
-            // XXX-jubjub: inconsistent ownership in from_bytes
-            let maybe_point = jubjub::AffinePoint::from_bytes(signature.r_bytes);
-            if maybe_point.is_some().into() {
-                jubjub::ExtendedPoint::from(maybe_point.unwrap())
-            } else {
-                return Err(Error::InvalidSignature);
-            }
-        };
+    pub(crate) fn verify_prehashed(&self, signature: &Signature<D>, c: Fr) -> Result<(), Error> {
+        let R = decaf377::Encoding(signature.r_bytes)
+            .decompress()
+            .map_err(|_| Error::InvalidSignature)?;
 
-        let s = {
-            // XXX-jubjub: should not use CtOption here
-            let maybe_scalar = Scalar::from_bytes(&signature.s_bytes);
-            if maybe_scalar.is_some().into() {
-                maybe_scalar.unwrap()
-            } else {
-                return Err(Error::InvalidSignature);
-            }
-        };
+        let s = Fr::from_bytes(signature.s_bytes).map_err(|_| Error::InvalidSignature)?;
 
         // XXX rewrite as normal double scalar mul
         // Verify check is h * ( - s * B + R  + c * A) == 0
         //                 h * ( s * B - c * A - R) == 0
-        let sB = &T::basepoint() * &s;
-        let cA = &self.point * &c;
-        let check = sB - cA - r;
+        let sB = D::basepoint() * s;
+        let cA = self.point * c;
+        let check = sB - cA - R;
 
-        if check.is_small_order().into() {
+        if check.is_identity() {
             Ok(())
         } else {
             Err(Error::InvalidSignature)

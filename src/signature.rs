@@ -1,18 +1,18 @@
 use std::marker::PhantomData;
 
-use crate::SigType;
+use crate::Domain;
 
 /// A RedJubJub signature.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Signature<T: SigType> {
+pub struct Signature<D: Domain> {
     pub(crate) r_bytes: [u8; 32],
     pub(crate) s_bytes: [u8; 32],
-    pub(crate) _marker: PhantomData<T>,
+    pub(crate) _marker: PhantomData<D>,
 }
 
-impl<T: SigType> From<[u8; 64]> for Signature<T> {
-    fn from(bytes: [u8; 64]) -> Signature<T> {
+impl<D: Domain> From<[u8; 64]> for Signature<D> {
+    fn from(bytes: [u8; 64]) -> Signature<D> {
         let mut r_bytes = [0; 32];
         r_bytes.copy_from_slice(&bytes[0..32]);
         let mut s_bytes = [0; 32];
@@ -25,8 +25,8 @@ impl<T: SigType> From<[u8; 64]> for Signature<T> {
     }
 }
 
-impl<T: SigType> From<Signature<T>> for [u8; 64] {
-    fn from(sig: Signature<T>) -> [u8; 64] {
+impl<D: Domain> From<Signature<D>> for [u8; 64] {
+    fn from(sig: Signature<D>) -> [u8; 64] {
         let mut bytes = [0; 64];
         bytes[0..32].copy_from_slice(&sig.r_bytes[..]);
         bytes[32..64].copy_from_slice(&sig.s_bytes[..]);

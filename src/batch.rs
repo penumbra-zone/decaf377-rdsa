@@ -10,18 +10,20 @@
 
 use std::convert::TryFrom;
 
-use jubjub::*;
+use ark_ff::Zero;
+use decaf377::{Element, Fr, FrExt};
 use rand_core::{CryptoRng, RngCore};
 
-use crate::{private::Sealed, scalar_mul::VartimeMultiscalarMul, *};
+use crate::{
+    domain::Sealed, Binding, Error, HStar, Signature, SpendAuth, VerificationKey,
+    VerificationKeyBytes,
+};
 
-// Shim to generate a random 128bit value in a [u64; 4], without
-// importing `rand`.
-fn gen_128_bits<R: RngCore + CryptoRng>(mut rng: R) -> [u64; 4] {
-    let mut bytes = [0u64; 4];
-    bytes[0] = rng.next_u64();
-    bytes[1] = rng.next_u64();
-    bytes
+// Shim to generate a random 128bit Fr value.
+fn gen_128_bits<R: RngCore + CryptoRng>(mut rng: R) -> Fr {
+    let lo = rng.next_u64() as u128;
+    let hi = rng.next_u64() as u128;
+    (lo + (hi << 64)).into()
 }
 
 #[derive(Clone, Debug)]
@@ -29,12 +31,12 @@ enum Inner {
     SpendAuth {
         vk_bytes: VerificationKeyBytes<SpendAuth>,
         sig: Signature<SpendAuth>,
-        c: Scalar,
+        c: Fr,
     },
     Binding {
         vk_bytes: VerificationKeyBytes<Binding>,
         sig: Signature<Binding>,
-        c: Scalar,
+        c: Fr,
     },
 }
 
@@ -175,8 +177,8 @@ impl Verifier {
         let mut VKs = Vec::with_capacity(n);
         let mut R_coeffs = Vec::with_capacity(self.signatures.len());
         let mut Rs = Vec::with_capacity(self.signatures.len());
-        let mut P_spendauth_coeff = Scalar::zero();
-        let mut P_binding_coeff = Scalar::zero();
+        let mut P_spendauth_coeff = Fr::zero();
+        let mut P_binding_coeff = Fr::zero();
 
         for item in self.signatures.iter() {
             let (s_bytes, r_bytes, c) = match item.inner {
@@ -184,26 +186,10 @@ impl Verifier {
                 Inner::Binding { sig, c, .. } => (sig.s_bytes, sig.r_bytes, c),
             };
 
-            let s = {
-                // XXX-jubjub: should not use CtOption here
-                let maybe_scalar = Scalar::from_bytes(&s_bytes);
-                if maybe_scalar.is_some().into() {
-                    maybe_scalar.unwrap()
-                } else {
-                    return Err(Error::InvalidSignature);
-                }
-            };
-
-            let R = {
-                // XXX-jubjub: should not use CtOption here
-                // XXX-jubjub: inconsistent ownership in from_bytes
-                let maybe_point = AffinePoint::from_bytes(r_bytes);
-                if maybe_point.is_some().into() {
-                    jubjub::ExtendedPoint::from(maybe_point.unwrap())
-                } else {
-                    return Err(Error::InvalidSignature);
-                }
-            };
+            let s = Fr::from_bytes(s_bytes).map_err(|_| Error::InvalidSignature)?;
+            let R = decaf377::Encoding(r_bytes)
+                .decompress()
+                .map_err(|_| Error::InvalidSignature)?;
 
             let VK = match item.inner {
                 Inner::SpendAuth { vk_bytes, .. } => {
@@ -214,7 +200,7 @@ impl Verifier {
                 }
             };
 
-            let z = Scalar::from_raw(gen_128_bits(&mut rng));
+            let z = gen_128_bits(&mut rng);
 
             let P_coeff = z * s;
             match item.inner {
@@ -229,7 +215,7 @@ impl Verifier {
             R_coeffs.push(z);
             Rs.push(R);
 
-            VK_coeffs.push(Scalar::zero() + (z * c));
+            VK_coeffs.push(z * c);
             VKs.push(VK);
         }
 
@@ -243,9 +229,9 @@ impl Verifier {
         let basepoints = [SpendAuth::basepoint(), Binding::basepoint()];
         let points = basepoints.iter().chain(VKs.iter()).chain(Rs.iter());
 
-        let check = ExtendedPoint::vartime_multiscalar_mul(scalars, points);
+        let check = Element::vartime_multiscalar_mul(scalars, points);
 
-        if check.is_small_order().into() {
+        if check.is_identity() {
             Ok(())
         } else {
             Err(Error::InvalidSignature)

@@ -3,14 +3,14 @@ use std::convert::TryFrom;
 use proptest::prelude::*;
 use rand_core::{CryptoRng, RngCore};
 
-use redjubjub::*;
+use decaf377_rdsa::*;
 
 /// A signature test-case, containing signature data and expected validity.
 #[derive(Clone, Debug)]
-struct SignatureCase<T: SigType> {
+struct SignatureCase<D: Domain> {
     msg: Vec<u8>,
-    sig: Signature<T>,
-    pk_bytes: VerificationKeyBytes<T>,
+    sig: Signature<D>,
+    pk_bytes: VerificationKeyBytes<D>,
     is_valid: bool,
 }
 
@@ -23,19 +23,13 @@ enum Tweak {
     ChangeMessage,
     /// Change the public key the signature is defined for, invalidating the signature.
     ChangePubkey,
-    /* XXX implement this -- needs to regenerate a custom signature because the
-       nonce commitment is fed into the hash, so it has to have torsion at signing
-       time.
-    /// Change the case to have a torsion component in the signature's `r` value.
-    AddTorsion,
-    */
     /* XXX implement this -- needs custom handling of field arithmetic.
     /// Change the signature's `s` scalar to be unreduced (mod L), invalidating the signature.
     UnreducedScalar,
     */
 }
 
-impl<T: SigType> SignatureCase<T> {
+impl<D: Domain> SignatureCase<D> {
     fn new<R: RngCore + CryptoRng>(mut rng: R, msg: Vec<u8>) -> Self {
         let sk = SigningKey::new(&mut rng);
         let sig = sk.sign(&mut rng, &msg);
@@ -54,11 +48,11 @@ impl<T: SigType> SignatureCase<T> {
         // conversion to raw bytes to exercise those code paths.
         let sig = {
             let bytes: [u8; 64] = self.sig.into();
-            Signature::<T>::from(bytes)
+            Signature::<D>::from(bytes)
         };
         let pk_bytes = {
             let bytes: [u8; 32] = self.pk_bytes.into();
-            VerificationKeyBytes::<T>::from(bytes)
+            VerificationKeyBytes::<D>::from(bytes)
         };
 
         // Check that signature validation has the expected result.
@@ -136,10 +130,10 @@ proptest! {
         let mut rng = ChaChaRng::seed_from_u64(rng_seed);
 
         let r = {
-            // XXX-jubjub: better API for this
+            use ark_ff::PrimeField;
             let mut bytes = [0; 64];
             rng.fill_bytes(&mut bytes[..]);
-            Randomizer::from_bytes_wide(&bytes)
+            Randomizer::from_le_bytes_mod_order(&bytes)
         };
 
         let sk = SigningKey::<SpendAuth>::new(&mut rng);

@@ -1,7 +1,8 @@
-use crate::Scalar;
+use ark_ff::PrimeField;
 use blake2b_simd::{Params, State};
+use decaf377::Fr;
 
-/// Provides H^star, the hash-to-scalar function used by RedJubjub.
+/// Provides H^star, the hash-to-scalar function.
 pub struct HStar {
     state: State,
 }
@@ -10,7 +11,7 @@ impl Default for HStar {
     fn default() -> Self {
         let state = Params::new()
             .hash_length(64)
-            .personal(b"Zcash_RedJubjubH")
+            .personal(b"decaf377-rdsa---")
             .to_state();
         Self { state }
     }
@@ -24,7 +25,7 @@ impl HStar {
     }
 
     /// Consume `self` to compute the hash output.
-    pub fn finalize(&self) -> Scalar {
-        Scalar::from_bytes_wide(self.state.finalize().as_array())
+    pub fn finalize(&self) -> Fr {
+        Fr::from_le_bytes_mod_order(self.state.finalize().as_array())
     }
 }

@@ -1,43 +1,34 @@
 [package]
-name = "redjubjub"
+name = "decaf377-rdsa"
 edition = "2018"
-# When releasing to crates.io:
-# - Update html_root_url
-# - Update CHANGELOG.md
-# - Create git tag.
-version = "0.2.2"
-authors = ["Henry de Valence <hdevalence@hdevalence.ca>", "Deirdre Connolly <durumcrustulum@gmail.com>"]
+version = "0.1.0"
+authors = ["Penumbra Labs <team@penumbra.zone>"]
 readme = "README.md"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/ZcashFoundation/redjubjub"
-categories = ["cryptography"]
-keywords = ["cryptography", "crypto", "jubjub", "redjubjub", "zcash"]
-description = "A standalone implementation of the RedJubjub signature scheme."
-
-[package.metadata.docs.rs]
-features = ["nightly"]
+description = "decaf377-rdsa is a randomizable signature scheme using the decaf377 group."
 
 [dependencies]
 blake2b_simd = "0.5"
 byteorder = "1.3"
+decaf377 = { git = "https://github.com/penumbra-zone/decaf377" }
 digest = "0.9"
-jubjub = "0.3"
-rand_core = "0.5"
+rand_core = "0.6"
 serde = { version = "1", optional = true, features = ["derive"] }
 thiserror = "1.0"
+ark-serialize = "0.3"
+ark-ff = "0.3"
 
 [dev-dependencies]
 bincode = "1"
 criterion = "0.3"
 lazy_static = "1.4"
-proptest = "0.10"
-rand = "0.7"
-rand_chacha = "0.2"
-
-[features]
-nightly = []
-default = ["serde"]
+proptest = "1"
+rand = "0.8"
+rand_chacha = "0.3"
 
 [[bench]]
 name = "bench"
 harness = false
+
+[features]
+default = ["serde"]

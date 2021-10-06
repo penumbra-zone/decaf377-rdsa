@@ -1,8 +1,9 @@
+use rand::{thread_rng, Rng};
+
+use std::convert::TryFrom;
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 
-use rand::{thread_rng, Rng};
-use redjubjub::*;
-use std::convert::TryFrom;
+use decaf377_rdsa::*;
 
 enum Item {
     SpendAuth {
