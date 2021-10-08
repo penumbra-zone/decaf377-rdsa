@@ -78,6 +78,12 @@ impl<D: Domain> From<VerificationKey<D>> for [u8; 32] {
     }
 }
 
+impl<'a, D: Domain> From<&'a VerificationKey<D>> for [u8; 32] {
+    fn from(pk: &'a VerificationKey<D>) -> [u8; 32] {
+        pk.bytes.bytes
+    }
+}
+
 impl<D: Domain> TryFrom<VerificationKeyBytes<D>> for VerificationKey<D> {
     type Error = Error;
 
