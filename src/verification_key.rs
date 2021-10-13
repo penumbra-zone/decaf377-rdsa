@@ -9,7 +9,7 @@ use decaf377::{Fr, FrExt};
 use crate::{domain::Sealed, Domain, Error, Randomizer, Signature, SpendAuth};
 
 /// A refinement type for `[u8; 32]` indicating that the bytes represent
-/// an encoding of a RedJubJub verification key.
+/// an encoding of a `decaf377-rdsa` verification key.
 ///
 /// This is useful for representing a compressed verification key; the
 /// [`VerificationKey`] type in this library holds other decompressed state
@@ -43,19 +43,11 @@ impl<D: Domain> Hash for VerificationKeyBytes<D> {
     }
 }
 
-/// A valid RedJubJub verification key.
+/// A valid `decaf377-rdsa` verification key.
 ///
 /// This type holds decompressed state used in signature verification; if the
 /// verification key may not be used immediately, it is probably better to use
 /// [`VerificationKeyBytes`], which is a refinement type for `[u8; 32]`.
-///
-/// ## Consensus properties
-///
-/// The `TryFrom<VerificationKeyBytes>` conversion performs the following Zcash
-/// consensus rule checks:
-///
-/// 1. The check that the bytes are a canonical encoding of a verification key;
-/// 2. The check that the verification key is not a point of small order.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(try_from = "VerificationKeyBytes<D>"))]
