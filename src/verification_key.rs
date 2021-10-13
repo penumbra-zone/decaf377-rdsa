@@ -6,7 +6,7 @@ use std::{
 
 use decaf377::{Fr, FrExt};
 
-use crate::{domain::Sealed, Domain, Error, Randomizer, Signature, SpendAuth};
+use crate::{domain::Sealed, Domain, Error, Signature, SpendAuth};
 
 /// A refinement type for `[u8; 32]` indicating that the bytes represent
 /// an encoding of a `decaf377-rdsa` verification key.
@@ -102,7 +102,7 @@ impl VerificationKey<SpendAuth> {
     /// Randomize this verification key with the given `randomizer`.
     ///
     /// Randomization is only supported for `SpendAuth` keys.
-    pub fn randomize(&self, randomizer: &Randomizer) -> VerificationKey<SpendAuth> {
+    pub fn randomize(&self, randomizer: &Fr) -> VerificationKey<SpendAuth> {
         let point = self.point + (SpendAuth::basepoint() * randomizer);
         let bytes = VerificationKeyBytes {
             bytes: point.compress().into(),

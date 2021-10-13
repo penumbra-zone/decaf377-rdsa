@@ -133,7 +133,7 @@ proptest! {
             use ark_ff::PrimeField;
             let mut bytes = [0; 64];
             rng.fill_bytes(&mut bytes[..]);
-            Randomizer::from_le_bytes_mod_order(&bytes)
+            Fr::from_le_bytes_mod_order(&bytes)
         };
 
         let sk = SigningKey::<SpendAuth>::new(&mut rng);

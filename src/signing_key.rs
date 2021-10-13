@@ -7,7 +7,7 @@ use ark_ff::PrimeField;
 use decaf377::{Fr, FrExt};
 use rand_core::{CryptoRng, RngCore};
 
-use crate::{Domain, Error, Randomizer, Signature, SpendAuth, VerificationKey};
+use crate::{Domain, Error, Signature, SpendAuth, VerificationKey};
 
 /// A `decaf377-rdsa` signing key.
 #[derive(Copy, Clone, Debug)]
@@ -44,8 +44,13 @@ impl<D: Domain> TryFrom<[u8; 32]> for SigningKey<D> {
     fn try_from(bytes: [u8; 32]) -> Result<Self, Self::Error> {
         use ark_serialize::CanonicalDeserialize;
         let sk = Fr::deserialize(&bytes[..]).map_err(|_| Error::MalformedSigningKey)?;
-        let pk = VerificationKey::from(&sk);
-        Ok(SigningKey { sk, pk })
+        Ok(Self::new_from_field(sk))
+    }
+}
+
+impl<D: Domain> From<Fr> for SigningKey<D> {
+    fn from(sk: Fr) -> Self {
+        Self::new_from_field(sk)
     }
 }
 
@@ -68,7 +73,7 @@ impl<D: Domain> From<SigningKey<D>> for SerdeHelper {
 
 impl SigningKey<SpendAuth> {
     /// Randomize this public key with the given `randomizer`.
-    pub fn randomize(&self, randomizer: &Randomizer) -> SigningKey<SpendAuth> {
+    pub fn randomize(&self, randomizer: &Fr) -> SigningKey<SpendAuth> {
         let sk = self.sk + randomizer;
         let pk = VerificationKey::from(&sk);
         SigningKey { sk, pk }
@@ -76,13 +81,23 @@ impl SigningKey<SpendAuth> {
 }
 
 impl<D: Domain> SigningKey<D> {
-    /// Generate a new signing key.
+    /// Create a new signing key from the supplied `rng`.
     pub fn new<R: RngCore + CryptoRng>(mut rng: R) -> SigningKey<D> {
         let sk = {
             let mut bytes = [0; 64];
             rng.fill_bytes(&mut bytes);
             Fr::from_le_bytes_mod_order(&bytes[..])
         };
+        Self::new_from_field(sk)
+    }
+
+    /// Use the supplied field element as the signing key directly.
+    ///
+    /// # Warning
+    ///
+    /// This function exists to allow custom key derivation; it's the caller's
+    /// responsibility to ensure that the input was generated securely.
+    pub fn new_from_field(sk: Fr) -> SigningKey<D> {
         let pk = VerificationKey::from(&sk);
         SigningKey { sk, pk }
     }
