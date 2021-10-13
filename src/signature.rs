@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use crate::Domain;
 
-/// A RedJubJub signature.
+/// A `decaf377-rdsa` signature.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Signature<D: Domain> {

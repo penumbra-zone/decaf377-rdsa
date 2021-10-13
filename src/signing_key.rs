@@ -9,7 +9,7 @@ use ark_ff::PrimeField;
 
 use crate::{Domain, Error, Randomizer, Signature, SpendAuth, VerificationKey};
 
-/// A RedJubJub signing key.
+/// A `decaf377-rdsa` signing key.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(try_from = "SerdeHelper"))]

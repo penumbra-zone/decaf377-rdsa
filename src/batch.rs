@@ -1,4 +1,4 @@
-//! Performs batch RedJubjub signature verification.
+//! Performs batch `decaf377-rdsa` signature verification.
 //!
 //! Batch verification asks whether *all* signatures in some set are valid,
 //! rather than asking whether *each* of them is valid. This allows sharing
@@ -155,18 +155,16 @@ impl Verifier {
     /// - h_G is the cofactor of the group;
     /// - P_G is the generator of the subgroup;
     ///
-    /// Since RedJubjub uses different subgroups for different types
-    /// of signatures, SpendAuth's and Binding's, we need to have yet
-    /// another point and associated scalar accumulator for all the
-    /// signatures of each type in our batch, but we can still
-    /// amortize computation nicely in one multiscalar multiplication:
+    /// Since `decaf377-rdsa` uses a different generator for each signature
+    /// domain, we have a separate scalar accumulator for each domain, but we
+    /// can still amortize computation nicely in one multiscalar multiplication:
     ///
     /// h_G * ( [-sum(z_i * s_i): i_type == SpendAuth]P_SpendAuth + [-sum(z_i * s_i): i_type == Binding]P_Binding + sum([z_i]R_i) + sum([z_i * c_i]VK_i) ) = 0_G
     ///
     /// As follows elliptic curve scalar multiplication convention,
     /// scalar variables are lowercase and group point variables
     /// are uppercase. This does not exactly match the RedDSA
-    /// notation in the [protocol specification §B.1][ps].
+    /// notation in the [Zcash protocol specification §B.1][ps].
     ///
     /// [ps]: https://zips.z.cash/protocol/protocol.pdf#reddsabatchverify
     #[allow(non_snake_case)]
