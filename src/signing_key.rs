@@ -4,7 +4,7 @@ use std::{
 };
 
 use ark_ff::PrimeField;
-use decaf377::{Fr, FrExt};
+use decaf377::{FieldExt, Fr};
 use rand_core::{CryptoRng, RngCore};
 
 use crate::{Domain, Error, Signature, SpendAuth, VerificationKey};
