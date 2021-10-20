@@ -11,7 +11,7 @@
 use std::convert::TryFrom;
 
 use ark_ff::Zero;
-use decaf377::{Element, Fr, FrExt};
+use decaf377::{Element, FieldExt, Fr};
 use rand_core::{CryptoRng, RngCore};
 
 use crate::{

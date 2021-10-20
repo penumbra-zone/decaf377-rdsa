@@ -4,7 +4,7 @@ use std::{
     marker::PhantomData,
 };
 
-use decaf377::{Fr, FrExt};
+use decaf377::{FieldExt, Fr};
 
 use crate::{domain::Sealed, Domain, Error, Signature, SpendAuth};
 
