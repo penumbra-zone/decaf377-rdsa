@@ -21,6 +21,12 @@ pub struct VerificationKeyBytes<D: Domain> {
     pub(crate) _marker: PhantomData<D>,
 }
 
+impl<D: Domain> AsRef<[u8; 32]> for VerificationKeyBytes<D> {
+    fn as_ref(&self) -> &[u8; 32] {
+        &self.bytes
+    }
+}
+
 impl<D: Domain> From<[u8; 32]> for VerificationKeyBytes<D> {
     fn from(bytes: [u8; 32]) -> VerificationKeyBytes<D> {
         VerificationKeyBytes {
@@ -95,6 +101,12 @@ impl<D: Domain> TryFrom<[u8; 32]> for VerificationKey<D> {
     fn try_from(bytes: [u8; 32]) -> Result<Self, Self::Error> {
         use std::convert::TryInto;
         VerificationKeyBytes::from(bytes).try_into()
+    }
+}
+
+impl<D: Domain> AsRef<[u8; 32]> for VerificationKey<D> {
+    fn as_ref(&self) -> &[u8; 32] {
+        self.bytes.as_ref()
     }
 }
 
