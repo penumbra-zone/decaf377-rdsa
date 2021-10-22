@@ -146,6 +146,11 @@ impl<D: Domain> VerificationKey<D> {
         self.verify_prehashed(signature, c)
     }
 
+    /// Convenience method for identity checks.
+    pub fn is_identity(&self) -> bool {
+        self.point.is_identity()
+    }
+
     /// Verify a purported `signature` with a prehashed challenge.
     #[allow(non_snake_case)]
     pub(crate) fn verify_prehashed(&self, signature: &Signature<D>, c: Fr) -> Result<(), Error> {
