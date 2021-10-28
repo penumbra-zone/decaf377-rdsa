@@ -10,6 +10,12 @@ the library also provides `VerificationKeyBytes`, a [refinement] of a
 verification key. This allows the `VerificationKey` type to cache
 verification checks related to the verification key encoding.
 
+## WARNING
+
+This code is a work-in-progress, and the entire specification is still subject
+to change.  In particular, it's likely that the basepoint used for binding
+signatures will change in the future as the `decaf377` spec evolves.
+
 ## Examples
 
 Creating a spend authorization signature, serializing and deserializing it, and
