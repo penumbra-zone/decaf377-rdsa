@@ -40,7 +40,7 @@ pub(crate) mod private {
     }
     impl Sealed for SpendAuth {
         fn basepoint() -> decaf377::Element {
-            hash_to_group(b"decaf377-rdsa-spendauth")
+            decaf377::basepoint()
         }
     }
 }
