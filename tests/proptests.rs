@@ -6,7 +6,7 @@ use rand_core::{CryptoRng, RngCore};
 use decaf377_rdsa::*;
 
 /// A signature test-case, containing signature data and expected validity.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 struct SignatureCase<D: Domain> {
     msg: Vec<u8>,
     sig: Signature<D>,

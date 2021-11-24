@@ -7,10 +7,10 @@ use ark_ff::PrimeField;
 use decaf377::{FieldExt, Fr};
 use rand_core::{CryptoRng, RngCore};
 
-use crate::{Domain, Error, Signature, SpendAuth, VerificationKey};
+use crate::{Binding, Domain, Error, Signature, SpendAuth, VerificationKey};
 
 /// A `decaf377-rdsa` signing key.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(try_from = "SerdeHelper"))]
 #[cfg_attr(feature = "serde", serde(into = "SerdeHelper"))]
@@ -18,6 +18,22 @@ use crate::{Domain, Error, Signature, SpendAuth, VerificationKey};
 pub struct SigningKey<D: Domain> {
     sk: Fr,
     pk: VerificationKey<D>,
+}
+
+impl std::fmt::Debug for SigningKey<Binding> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("SigningKey<Binding>")
+            .field(&hex::encode(&<[u8; 32]>::from(*self)))
+            .finish()
+    }
+}
+
+impl std::fmt::Debug for SigningKey<SpendAuth> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("SigningKey<SpendAuth>")
+            .field(&hex::encode(&<[u8; 32]>::from(*self)))
+            .finish()
+    }
 }
 
 impl<'a, D: Domain> From<&'a SigningKey<D>> for VerificationKey<D> {

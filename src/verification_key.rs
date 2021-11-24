@@ -6,7 +6,7 @@ use std::{
 
 use decaf377::{FieldExt, Fr};
 
-use crate::{domain::Sealed, Domain, Error, Signature, SpendAuth};
+use crate::{domain::Sealed, Binding, Domain, Error, Signature, SpendAuth};
 
 /// A refinement type for `[u8; 32]` indicating that the bytes represent
 /// an encoding of a `decaf377-rdsa` verification key.
@@ -14,7 +14,7 @@ use crate::{domain::Sealed, Domain, Error, Signature, SpendAuth};
 /// This is useful for representing a compressed verification key; the
 /// [`VerificationKey`] type in this library holds other decompressed state
 /// used in signature verification.
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct VerificationKeyBytes<D: Domain> {
     pub(crate) bytes: [u8; 32],
@@ -54,7 +54,7 @@ impl<D: Domain> Hash for VerificationKeyBytes<D> {
 /// This type holds decompressed state used in signature verification; if the
 /// verification key may not be used immediately, it is probably better to use
 /// [`VerificationKeyBytes`], which is a refinement type for `[u8; 32]`.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(try_from = "VerificationKeyBytes<D>"))]
 #[cfg_attr(feature = "serde", serde(into = "VerificationKeyBytes<D>"))]
@@ -172,5 +172,37 @@ impl<D: Domain> VerificationKey<D> {
         } else {
             Err(Error::InvalidSignature)
         }
+    }
+}
+
+impl std::fmt::Debug for VerificationKey<Binding> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("VerificationKey<Binding>")
+            .field(&hex::encode(&<[u8; 32]>::from(*self)))
+            .finish()
+    }
+}
+
+impl std::fmt::Debug for VerificationKey<SpendAuth> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("VerificationKey<SpendAuth>")
+            .field(&hex::encode(&<[u8; 32]>::from(*self)))
+            .finish()
+    }
+}
+
+impl std::fmt::Debug for VerificationKeyBytes<Binding> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("VerificationKeyBytes<Binding>")
+            .field(&hex::encode(&<[u8; 32]>::from(*self)))
+            .finish()
+    }
+}
+
+impl std::fmt::Debug for VerificationKeyBytes<SpendAuth> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("VerificationKeyBytes<SpendAuth>")
+            .field(&hex::encode(&<[u8; 32]>::from(*self)))
+            .finish()
     }
 }
