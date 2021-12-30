@@ -14,7 +14,7 @@ use crate::{domain::Sealed, Binding, Domain, Error, Signature, SpendAuth};
 /// This is useful for representing a compressed verification key; the
 /// [`VerificationKey`] type in this library holds other decompressed state
 /// used in signature verification.
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct VerificationKeyBytes<D: Domain> {
     pub(crate) bytes: [u8; 32],
@@ -174,6 +174,21 @@ impl<D: Domain> VerificationKey<D> {
         }
     }
 }
+
+impl<D: Domain> std::cmp::PartialEq for VerificationKey<D> {
+    fn eq(&self, other: &Self) -> bool {
+        self.bytes.eq(&other.bytes)
+    }
+}
+
+impl<D: Domain> std::cmp::PartialEq for VerificationKeyBytes<D> {
+    fn eq(&self, other: &Self) -> bool {
+        self.bytes.eq(&other.bytes)
+    }
+}
+
+impl<D: Domain> std::cmp::Eq for VerificationKey<D> {}
+impl<D: Domain> std::cmp::Eq for VerificationKeyBytes<D> {}
 
 impl std::fmt::Debug for VerificationKey<Binding> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
