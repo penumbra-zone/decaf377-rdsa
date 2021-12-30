@@ -2,6 +2,10 @@
 
 Entries are listed in reverse chronological order.
 
+# 0.3.0
+
+* Add convenience `.to_bytes()` methods that work like `.into()` but don't require type inference.
+
 # 0.2.0
 
 * Generalize `Eq`, `PartialEq` impls for `VerificationKeyBytes`, `Signature` to avoid a derived `D: Domain + PartialEq` bound.
