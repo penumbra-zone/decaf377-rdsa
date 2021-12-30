@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use crate::{Binding, Domain, SpendAuth};
 
 /// A `decaf377-rdsa` signature.
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Signature<D: Domain> {
     pub(crate) r_bytes: [u8; 32],
@@ -49,3 +49,11 @@ impl<D: Domain> From<Signature<D>> for [u8; 64] {
         bytes
     }
 }
+
+impl<D: Domain> std::cmp::PartialEq for Signature<D> {
+    fn eq(&self, other: &Self) -> bool {
+        self.r_bytes.eq(&other.r_bytes) && self.s_bytes.eq(&other.s_bytes)
+    }
+}
+
+impl<D: Domain> std::cmp::Eq for Signature<D> {}
