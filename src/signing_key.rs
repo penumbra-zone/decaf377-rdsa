@@ -54,6 +54,15 @@ impl<D: Domain> From<SigningKey<D>> for [u8; 32] {
     }
 }
 
+impl<D: Domain> SigningKey<D> {
+    /// Returns the byte encoding of the signing key.
+    ///
+    /// This is the same as `.into()`, but does not require type inference.
+    pub fn to_bytes(&self) -> [u8; 32] {
+        self.sk.to_bytes()
+    }
+}
+
 impl<D: Domain> TryFrom<[u8; 32]> for SigningKey<D> {
     type Error = Error;
 

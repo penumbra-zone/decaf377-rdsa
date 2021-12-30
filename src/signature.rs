@@ -11,6 +11,18 @@ pub struct Signature<D: Domain> {
     pub(crate) _marker: PhantomData<D>,
 }
 
+impl<D: Domain> Signature<D> {
+    /// Returns the bytes of the signature.
+    ///
+    /// This is the same as `.into()`, but does not require type inference.
+    pub fn to_bytes(&self) -> [u8; 64] {
+        let mut bytes = [0; 64];
+        bytes[0..32].copy_from_slice(&self.r_bytes[..]);
+        bytes[32..64].copy_from_slice(&self.s_bytes[..]);
+        bytes
+    }
+}
+
 impl std::fmt::Debug for Signature<Binding> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_tuple("Signature<Binding>")
@@ -43,10 +55,7 @@ impl<D: Domain> From<[u8; 64]> for Signature<D> {
 
 impl<D: Domain> From<Signature<D>> for [u8; 64] {
     fn from(sig: Signature<D>) -> [u8; 64] {
-        let mut bytes = [0; 64];
-        bytes[0..32].copy_from_slice(&sig.r_bytes[..]);
-        bytes[32..64].copy_from_slice(&sig.s_bytes[..]);
-        bytes
+        sig.to_bytes()
     }
 }
 

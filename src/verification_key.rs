@@ -70,6 +70,15 @@ impl<D: Domain> From<VerificationKey<D>> for VerificationKeyBytes<D> {
     }
 }
 
+impl<D: Domain> VerificationKey<D> {
+    /// Returns the byte encoding of the verification key.
+    ///
+    /// This is the same as `.into()`, but does not require type inference.
+    pub fn to_bytes(&self) -> [u8; 32] {
+        self.bytes.bytes
+    }
+}
+
 impl<D: Domain> From<VerificationKey<D>> for [u8; 32] {
     fn from(pk: VerificationKey<D>) -> [u8; 32] {
         pk.bytes.bytes
