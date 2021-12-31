@@ -12,4 +12,7 @@ pub enum Error {
     /// Signature verification failed.
     #[error("Invalid signature.")]
     InvalidSignature,
+    /// Occurs when reading from a slice of the wrong length.
+    #[error("Wrong slice length, expected {expected}, found {found}")]
+    WrongSliceLength { expected: usize, found: usize },
 }
