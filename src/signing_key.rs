@@ -73,6 +73,23 @@ impl<D: Domain> TryFrom<[u8; 32]> for SigningKey<D> {
     }
 }
 
+impl<D: Domain> TryFrom<&[u8]> for SigningKey<D> {
+    type Error = Error;
+
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        if bytes.len() == 32 {
+            let mut bytes32 = [0u8; 32];
+            bytes32.copy_from_slice(&bytes);
+            bytes32.try_into()
+        } else {
+            Err(Error::WrongSliceLength {
+                expected: 32,
+                found: bytes.len(),
+            })
+        }
+    }
+}
+
 impl<D: Domain> From<Fr> for SigningKey<D> {
     fn from(sk: Fr) -> Self {
         Self::new_from_field(sk)

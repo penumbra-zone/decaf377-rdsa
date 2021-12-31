@@ -1,6 +1,7 @@
+use std::convert::TryFrom;
 use std::marker::PhantomData;
 
-use crate::{Binding, Domain, SpendAuth};
+use crate::{Binding, Domain, Error, SpendAuth};
 
 /// A `decaf377-rdsa` signature.
 #[derive(Copy, Clone)]
@@ -56,6 +57,23 @@ impl<D: Domain> From<[u8; 64]> for Signature<D> {
 impl<D: Domain> From<Signature<D>> for [u8; 64] {
     fn from(sig: Signature<D>) -> [u8; 64] {
         sig.to_bytes()
+    }
+}
+
+impl<D: Domain> TryFrom<&[u8]> for Signature<D> {
+    type Error = Error;
+
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        if bytes.len() == 64 {
+            let mut bytes64 = [0u8; 64];
+            bytes64.copy_from_slice(&bytes);
+            Ok(bytes64.into())
+        } else {
+            Err(Error::WrongSliceLength {
+                expected: 64,
+                found: bytes.len(),
+            })
+        }
     }
 }
 

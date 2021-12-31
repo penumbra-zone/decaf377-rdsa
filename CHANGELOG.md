@@ -2,6 +2,10 @@
 
 Entries are listed in reverse chronological order.
 
+# 0.4.0
+
+* Add `TryFrom<&[u8]>` impls to complement array conversions.
+
 # 0.3.0
 
 * Add convenience `.to_bytes()` methods that work like `.into()` but don't require type inference.

@@ -113,6 +113,32 @@ impl<D: Domain> TryFrom<[u8; 32]> for VerificationKey<D> {
     }
 }
 
+impl<D: Domain> TryFrom<&[u8]> for VerificationKeyBytes<D> {
+    type Error = Error;
+
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        if bytes.len() == 32 {
+            let mut bytes32 = [0u8; 32];
+            bytes32.copy_from_slice(&bytes);
+            Ok(bytes32.into())
+        } else {
+            Err(Error::WrongSliceLength {
+                expected: 32,
+                found: bytes.len(),
+            })
+        }
+    }
+}
+
+impl<D: Domain> TryFrom<&[u8]> for VerificationKey<D> {
+    type Error = Error;
+
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        use std::convert::TryInto;
+        VerificationKeyBytes::try_from(bytes)?.try_into()
+    }
+}
+
 impl<D: Domain> AsRef<[u8; 32]> for VerificationKey<D> {
     fn as_ref(&self) -> &[u8; 32] {
         self.bytes.as_ref()
