@@ -1,4 +1,5 @@
 use std::{
+    cmp::Ord,
     convert::TryFrom,
     hash::{Hash, Hasher},
     marker::PhantomData,
@@ -49,6 +50,18 @@ impl<D: Domain> Hash for VerificationKeyBytes<D> {
     }
 }
 
+impl<D: Domain> PartialOrd for VerificationKeyBytes<D> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.bytes.partial_cmp(&other.bytes)
+    }
+}
+
+impl<D: Domain> Ord for VerificationKeyBytes<D> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.bytes.cmp(&other.bytes)
+    }
+}
+
 /// A valid `decaf377-rdsa` verification key.
 ///
 /// This type holds decompressed state used in signature verification; if the
@@ -62,6 +75,24 @@ impl<D: Domain> Hash for VerificationKeyBytes<D> {
 pub struct VerificationKey<D: Domain> {
     pub(crate) point: decaf377::Element,
     pub(crate) bytes: VerificationKeyBytes<D>,
+}
+
+impl<D: Domain> Hash for VerificationKey<D> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.bytes.hash(state);
+    }
+}
+
+impl<D: Domain> PartialOrd for VerificationKey<D> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.bytes.partial_cmp(&other.bytes)
+    }
+}
+
+impl<D: Domain> Ord for VerificationKey<D> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.bytes.cmp(&other.bytes)
+    }
 }
 
 impl<D: Domain> From<VerificationKey<D>> for VerificationKeyBytes<D> {
