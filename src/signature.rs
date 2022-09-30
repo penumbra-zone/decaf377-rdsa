@@ -66,7 +66,7 @@ impl<D: Domain> TryFrom<&[u8]> for Signature<D> {
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
         if bytes.len() == 64 {
             let mut bytes64 = [0u8; 64];
-            bytes64.copy_from_slice(&bytes);
+            bytes64.copy_from_slice(bytes);
             Ok(bytes64.into())
         } else {
             Err(Error::WrongSliceLength {

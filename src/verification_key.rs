@@ -128,7 +128,7 @@ impl<D: Domain> TryFrom<VerificationKeyBytes<D>> for VerificationKey<D> {
     fn try_from(bytes: VerificationKeyBytes<D>) -> Result<Self, Self::Error> {
         // Note: the identity element is allowed as a verification key.
         let point = decaf377::Encoding(bytes.bytes)
-            .decompress()
+            .vartime_decompress()
             .map_err(|_| Error::MalformedVerificationKey)?;
 
         Ok(VerificationKey { point, bytes })
@@ -183,7 +183,7 @@ impl VerificationKey<SpendAuth> {
     pub fn randomize(&self, randomizer: &Fr) -> VerificationKey<SpendAuth> {
         let point = self.point + (SpendAuth::basepoint() * randomizer);
         let bytes = VerificationKeyBytes {
-            bytes: point.compress().into(),
+            bytes: point.vartime_compress().into(),
             _marker: PhantomData,
         };
         VerificationKey { bytes, point }
@@ -194,7 +194,7 @@ impl<D: Domain> VerificationKey<D> {
     pub(crate) fn from(s: &Fr) -> VerificationKey<D> {
         let point = &D::basepoint() * s;
         let bytes = VerificationKeyBytes {
-            bytes: point.compress().into(),
+            bytes: point.vartime_compress().into(),
             _marker: PhantomData,
         };
         VerificationKey { bytes, point }
@@ -221,7 +221,7 @@ impl<D: Domain> VerificationKey<D> {
     #[allow(non_snake_case)]
     pub(crate) fn verify_prehashed(&self, signature: &Signature<D>, c: Fr) -> Result<(), Error> {
         let R = decaf377::Encoding(signature.r_bytes)
-            .decompress()
+            .vartime_decompress()
             .map_err(|_| Error::InvalidSignature)?;
 
         let s = Fr::from_bytes(signature.s_bytes).map_err(|_| Error::InvalidSignature)?;

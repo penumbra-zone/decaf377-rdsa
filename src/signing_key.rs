@@ -79,7 +79,7 @@ impl<D: Domain> TryFrom<&[u8]> for SigningKey<D> {
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
         if bytes.len() == 32 {
             let mut bytes32 = [0u8; 32];
-            bytes32.copy_from_slice(&bytes);
+            bytes32.copy_from_slice(bytes);
             bytes32.try_into()
         } else {
             Err(Error::WrongSliceLength {
@@ -165,7 +165,7 @@ impl<D: Domain> SigningKey<D> {
             .update(msg)
             .finalize();
 
-        let r_bytes = (&D::basepoint() * &nonce).compress().0;
+        let r_bytes = (&D::basepoint() * &nonce).vartime_compress().0;
 
         let c = HStar::default()
             .update(&r_bytes[..])

@@ -25,7 +25,7 @@ pub(crate) mod private {
     use ark_ff::PrimeField;
 
     fn hash_to_group(input: &[u8]) -> decaf377::Element {
-        decaf377::Element::map_to_group_cdh(&decaf377::Fq::from_le_bytes_mod_order(
+        decaf377::Element::encode_to_curve(&decaf377::Fq::from_le_bytes_mod_order(
             blake2b_simd::blake2b(input).as_bytes(),
         ))
     }

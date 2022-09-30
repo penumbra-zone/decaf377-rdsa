@@ -186,7 +186,7 @@ impl Verifier {
 
             let s = Fr::from_bytes(s_bytes).map_err(|_| Error::InvalidSignature)?;
             let R = decaf377::Encoding(r_bytes)
-                .decompress()
+                .vartime_decompress()
                 .map_err(|_| Error::InvalidSignature)?;
 
             let VK = match item.inner {
