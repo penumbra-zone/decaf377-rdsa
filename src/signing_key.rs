@@ -68,7 +68,7 @@ impl<D: Domain> TryFrom<[u8; 32]> for SigningKey<D> {
 
     fn try_from(bytes: [u8; 32]) -> Result<Self, Self::Error> {
         use ark_serialize::CanonicalDeserialize;
-        let sk = Fr::deserialize(&bytes[..]).map_err(|_| Error::MalformedSigningKey)?;
+        let sk = Fr::deserialize_compressed(&bytes[..]).map_err(|_| Error::MalformedSigningKey)?;
         Ok(Self::new_from_field(sk))
     }
 }

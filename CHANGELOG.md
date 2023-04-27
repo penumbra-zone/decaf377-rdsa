@@ -2,6 +2,10 @@
 
 Entries are listed in reverse chronological order.
 
+# 0.6.0
+
+* Use 0.4 series of Arkworks dependencies.
+
 # 0.5.0
 
 * Add `Ord`, `PartialOrd` to `VerificationKey`, `VerificationKeyBytes` so they can be used with BTrees.
