@@ -2,10 +2,11 @@
 name = "decaf377-rdsa"
 edition = "2018"
 version = "0.5.0"
-authors = ["Penumbra Labs <team@penumbra.zone>"]
+authors = ["Penumbra Labs <team@penumbralabs.xyz>"]
 readme = "README.md"
 license = "MIT OR Apache-2.0"
 description = "decaf377-rdsa is a randomizable signature scheme using the decaf377 group."
+repository = "https://github.com/penumbra-zone/decaf377-rdsa"
 
 [dependencies]
 blake2b_simd = "0.5"
