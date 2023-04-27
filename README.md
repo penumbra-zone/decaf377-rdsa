@@ -1,3 +1,10 @@
+# decaf377-rdsa
+
+[![Crates.io][crates-badge]][crates-url]
+
+[crates-badge]: https://img.shields.io/crates/v/decaf377-rdsa.svg
+[crates-url]: https://crates.io/crates/decaf377-rdsa
+
 `decaf377-rdsa` is a variant of RedDSA, instantiated using the `decaf377` group.
 
 Signatures are parameterized by domain (for instance, `Binding` and
