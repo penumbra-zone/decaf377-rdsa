@@ -2,6 +2,10 @@
 
 Entries are listed in reverse chronological order.
 
+# 0.7.0
+
+* Use 0.5 series of decaf377 dependencies.
+
 # 0.6.0
 
 * Use 0.4 series of Arkworks dependencies.
