@@ -203,7 +203,7 @@ impl<D: Domain> VerificationKey<D> {
     pub fn verify(&self, msg: &[u8], signature: &Signature<D>) -> Result<(), Error> {
         use crate::HStar;
         let c = HStar::default()
-            .update(&signature.r_bytes[..])
+            .update(&signature.r_bytes()[..])
             .update(&self.bytes.bytes[..]) // XXX ugly
             .update(msg)
             .finalize();
@@ -218,11 +218,11 @@ impl<D: Domain> VerificationKey<D> {
     /// Verify a purported `signature` with a prehashed challenge.
     #[allow(non_snake_case)]
     pub(crate) fn verify_prehashed(&self, signature: &Signature<D>, c: Fr) -> Result<(), Error> {
-        let R = decaf377::Encoding(signature.r_bytes)
+        let R = decaf377::Encoding(signature.r_bytes())
             .vartime_decompress()
             .map_err(|_| Error::InvalidSignature)?;
 
-        let s = Fr::from_bytes(signature.s_bytes).map_err(|_| Error::InvalidSignature)?;
+        let s = Fr::from_bytes(signature.s_bytes()).map_err(|_| Error::InvalidSignature)?;
 
         // XXX rewrite as normal double scalar mul
         // Verify check is h * ( - s * B + R  + c * A) == 0

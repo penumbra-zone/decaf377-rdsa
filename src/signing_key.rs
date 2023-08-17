@@ -1,7 +1,4 @@
-use std::{
-    convert::{TryFrom, TryInto},
-    marker::PhantomData,
-};
+use std::convert::{TryFrom, TryInto};
 
 use ark_ff::PrimeField;
 use decaf377::{FieldExt, Fr};
@@ -175,10 +172,6 @@ impl<D: Domain> SigningKey<D> {
 
         let s_bytes = (nonce + (c * self.sk)).to_bytes();
 
-        Signature {
-            r_bytes,
-            s_bytes,
-            _marker: PhantomData,
-        }
+        Signature::from_parts(r_bytes, s_bytes)
     }
 }
