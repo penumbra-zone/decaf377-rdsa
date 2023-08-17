@@ -57,6 +57,8 @@ pub type SigningPackage = frost::SigningPackage<E>;
 
 /// FROST(Ed25519, SHA-512) Round 2 functionality and types, for signature share generation.
 pub mod round2 {
+    use frost_rerandomized::Randomizer;
+
     use super::*;
 
     /// A FROST(Ed25519, SHA-512) participant's signature share, which the Coordinator will aggregate with all other signer's
@@ -77,6 +79,21 @@ pub mod round2 {
         key_package: &keys::KeyPackage,
     ) -> Result<SignatureShare, Error> {
         frost::round2::sign(signing_package, signer_nonces, key_package)
+    }
+
+    /// Performs re-randomized signing.
+    pub fn sign_randomized(
+        signing_package: &SigningPackage,
+        signer_nonces: &round1::SigningNonces,
+        key_package: &keys::KeyPackage,
+        randomizer: crate::Fr,
+    ) -> Result<SignatureShare, Error> {
+        frost_rerandomized::sign(
+            signing_package,
+            signer_nonces,
+            key_package,
+            Randomizer::from_scalar(randomizer),
+        )
     }
 }
 
@@ -104,6 +121,23 @@ pub fn aggregate(
     pubkeys: &keys::PublicKeyPackage,
 ) -> Result<Signature, Error> {
     frost::aggregate(signing_package, signature_shares, pubkeys)
+}
+
+pub fn aggregate_randomized(
+    signing_package: &SigningPackage,
+    signature_shares: &HashMap<Identifier, round2::SignatureShare>,
+    pubkeys: &keys::PublicKeyPackage,
+    randomizer: crate::Fr,
+) -> Result<Signature, Error> {
+    frost_rerandomized::aggregate(
+        signing_package,
+        signature_shares,
+        pubkeys,
+        &frost_rerandomized::RandomizedParams::from_randomizer(
+            pubkeys.group_public(),
+            frost_rerandomized::Randomizer::from_scalar(randomizer),
+        ),
+    )
 }
 
 /// A signing key for a Schnorr signature on FROST(Ed25519, SHA-512).
