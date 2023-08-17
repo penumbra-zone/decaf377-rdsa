@@ -139,7 +139,6 @@ impl<D: Domain> TryFrom<[u8; 32]> for VerificationKey<D> {
     type Error = Error;
 
     fn try_from(bytes: [u8; 32]) -> Result<Self, Self::Error> {
-        use std::convert::TryInto;
         VerificationKeyBytes::from(bytes).try_into()
     }
 }
@@ -165,7 +164,6 @@ impl<D: Domain> TryFrom<&[u8]> for VerificationKey<D> {
     type Error = Error;
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
-        use std::convert::TryInto;
         VerificationKeyBytes::try_from(bytes)?.try_into()
     }
 }
