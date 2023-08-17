@@ -66,7 +66,7 @@ impl<'msg, M: AsRef<[u8]>>
     ) -> Self {
         // Compute c now to avoid dependency on the msg lifetime.
         let c = HStar::default()
-            .update(&sig.r_bytes[..])
+            .update(&sig.r_bytes()[..])
             .update(&vk_bytes.bytes[..])
             .update(msg)
             .finalize();
@@ -84,7 +84,7 @@ impl<'msg, M: AsRef<[u8]>> From<(VerificationKeyBytes<Binding>, Signature<Bindin
     ) -> Self {
         // Compute c now to avoid dependency on the msg lifetime.
         let c = HStar::default()
-            .update(&sig.r_bytes[..])
+            .update(&sig.r_bytes()[..])
             .update(&vk_bytes.bytes[..])
             .update(msg)
             .finalize();
@@ -180,8 +180,8 @@ impl Verifier {
 
         for item in self.signatures.iter() {
             let (s_bytes, r_bytes, c) = match item.inner {
-                Inner::SpendAuth { sig, c, .. } => (sig.s_bytes, sig.r_bytes, c),
-                Inner::Binding { sig, c, .. } => (sig.s_bytes, sig.r_bytes, c),
+                Inner::SpendAuth { sig, c, .. } => (sig.s_bytes(), sig.r_bytes(), c),
+                Inner::Binding { sig, c, .. } => (sig.s_bytes(), sig.r_bytes(), c),
             };
 
             let s = Fr::from_bytes(s_bytes).map_err(|_| Error::InvalidSignature)?;

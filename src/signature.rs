@@ -6,10 +6,16 @@ use crate::{Binding, Domain, Error, SpendAuth};
 /// A `decaf377-rdsa` signature.
 #[derive(Copy, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(try_from = "&[u8]", into = "Vec<u8>"))]
 pub struct Signature<D: Domain> {
-    pub(crate) r_bytes: [u8; 32],
-    pub(crate) s_bytes: [u8; 32],
-    pub(crate) _marker: PhantomData<D>,
+    bytes: [u8; 64],
+    _marker: PhantomData<D>,
+}
+
+impl<D: Domain> AsRef<[u8]> for Signature<D> {
+    fn as_ref(&self) -> &[u8] {
+        &self.bytes
+    }
 }
 
 impl<D: Domain> Signature<D> {
@@ -17,10 +23,25 @@ impl<D: Domain> Signature<D> {
     ///
     /// This is the same as `.into()`, but does not require type inference.
     pub fn to_bytes(&self) -> [u8; 64] {
+        self.bytes
+    }
+
+    pub(crate) fn from_parts(r_bytes: [u8; 32], s_bytes: [u8; 32]) -> Self {
         let mut bytes = [0; 64];
-        bytes[0..32].copy_from_slice(&self.r_bytes[..]);
-        bytes[32..64].copy_from_slice(&self.s_bytes[..]);
-        bytes
+        bytes[0..32].copy_from_slice(&r_bytes[..]);
+        bytes[32..64].copy_from_slice(&s_bytes[..]);
+        Self {
+            bytes,
+            _marker: PhantomData,
+        }
+    }
+
+    pub(crate) fn r_bytes(&self) -> [u8; 32] {
+        self.bytes[0..32].try_into().expect("32 byte array")
+    }
+
+    pub(crate) fn s_bytes(&self) -> [u8; 32] {
+        self.bytes[32..64].try_into().expect("32 byte array")
     }
 }
 
@@ -42,13 +63,8 @@ impl std::fmt::Debug for Signature<SpendAuth> {
 
 impl<D: Domain> From<[u8; 64]> for Signature<D> {
     fn from(bytes: [u8; 64]) -> Signature<D> {
-        let mut r_bytes = [0; 32];
-        r_bytes.copy_from_slice(&bytes[0..32]);
-        let mut s_bytes = [0; 32];
-        s_bytes.copy_from_slice(&bytes[32..64]);
         Signature {
-            r_bytes,
-            s_bytes,
+            bytes,
             _marker: PhantomData,
         }
     }
@@ -57,6 +73,12 @@ impl<D: Domain> From<[u8; 64]> for Signature<D> {
 impl<D: Domain> From<Signature<D>> for [u8; 64] {
     fn from(sig: Signature<D>) -> [u8; 64] {
         sig.to_bytes()
+    }
+}
+
+impl<D: Domain> From<Signature<D>> for Vec<u8> {
+    fn from(sig: Signature<D>) -> Vec<u8> {
+        sig.to_bytes().into()
     }
 }
 
@@ -79,7 +101,7 @@ impl<D: Domain> TryFrom<&[u8]> for Signature<D> {
 
 impl<D: Domain> std::cmp::PartialEq for Signature<D> {
     fn eq(&self, other: &Self) -> bool {
-        self.r_bytes.eq(&other.r_bytes) && self.s_bytes.eq(&other.s_bytes)
+        self.bytes == other.bytes
     }
 }
 
