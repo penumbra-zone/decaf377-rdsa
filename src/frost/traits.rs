@@ -1,13 +1,12 @@
 use ark_ff::{Field as _, One, UniformRand, Zero};
 
 pub use frost_core::{frost, Ciphersuite, Field, FieldError, Group, GroupError};
-pub type Error = frost_core::Error<Decaf377Rdsa>;
 
 use rand_core;
 
 use decaf377::{Element, FieldExt, Fr};
 
-use crate::hash::HStar;
+use crate::{hash::HStar, SpendAuth};
 
 #[derive(Copy, Clone)]
 pub struct Decaf377ScalarField;
@@ -92,7 +91,7 @@ impl Ciphersuite for Decaf377Rdsa {
 
     type HashOutput = [u8; 32];
 
-    type SignatureSerialization = [u8; 64];
+    type SignatureSerialization = crate::Signature<SpendAuth>;
 
     fn H1(m: &[u8]) -> <<Self::Group as Group>::Field as Field>::Scalar {
         HStar::default()
@@ -134,7 +133,6 @@ impl Ciphersuite for Decaf377Rdsa {
             .to_bytes()
     }
 
-    /// HDKG for FROST(Ed25519, SHA-512)
     fn HDKG(m: &[u8]) -> Option<<<Self::Group as Group>::Field as Field>::Scalar> {
         Some(
             HStar::default()
@@ -145,7 +143,6 @@ impl Ciphersuite for Decaf377Rdsa {
         )
     }
 
-    /// HID for FROST(Ed25519, SHA-512)
     fn HID(m: &[u8]) -> Option<<<Self::Group as Group>::Field as Field>::Scalar> {
         Some(
             HStar::default()
