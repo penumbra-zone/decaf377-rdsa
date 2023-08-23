@@ -1,4 +1,4 @@
-//! Distributed key generation (DKG) for FROST(decaf377-rdsa).
+//! Distributed key generation without a trusted dealer.
 
 // Copied from frost-ed25519 ("MIT or Apache-2.0")
 
