@@ -1,12 +1,20 @@
+//! Threshold signing for `decaf377-rdsa` signatures via FROST.
+//!
+//! This implementation only supports producing `SpendAuth` signatures, which
+//! use the conventional `decaf377` basepoint.
+
+use frost_core::frost;
 use std::collections::HashMap;
 
-pub use frost_core::{frost, Ciphersuite, Field, FieldError, Group, GroupError};
+/// A FROST-related error.
 pub type Error = frost_core::Error<traits::Decaf377Rdsa>;
 
 use rand_core::{self, CryptoRng, RngCore};
 
 pub mod keys;
-pub mod traits;
+mod traits;
+
+use crate::{Signature, SpendAuth};
 
 // TODO: properly factor this code into leaf modules
 
@@ -14,16 +22,16 @@ pub mod traits;
 
 type E = traits::Decaf377Rdsa;
 
-/// A FROST(Ed25519, SHA-512) participant identifier.
+/// A FROST participant identifier.
 pub type Identifier = frost::Identifier<E>;
 
-/// FROST(Ed25519, SHA-512) Round 1 functionality and types.
+/// Signing round 1 functionality and types.
 pub mod round1 {
     use crate::frost::keys::SigningShare;
 
     use super::*;
 
-    /// Comprised of FROST(Ed25519, SHA-512) hiding and binding nonces.
+    /// The nonces used for a single FROST signing ceremony.
     ///
     /// Note that [`SigningNonces`] must be used *only once* for a signing
     /// operation; re-using nonces will result in leakage of a signer's long-lived
@@ -36,8 +44,11 @@ pub mod round1 {
     /// SigningCommitment can be used for exactly *one* signature.
     pub type SigningCommitments = frost::round1::SigningCommitments<E>;
 
+    /*
+    // TODO: doesn't seem like this is used directly?
     /// A commitment to a signing nonce share.
     pub type NonceCommitment = frost::round1::NonceCommitment<E>;
+     */
 
     /// Performed once by each participant selected for the signing operation.
     ///
@@ -55,14 +66,14 @@ pub mod round1 {
 /// each signing party.
 pub type SigningPackage = frost::SigningPackage<E>;
 
-/// FROST(Ed25519, SHA-512) Round 2 functionality and types, for signature share generation.
+/// Signing Round 2 functionality and types.
 pub mod round2 {
     use frost_rerandomized::Randomizer;
 
     use super::*;
 
-    /// A FROST(Ed25519, SHA-512) participant's signature share, which the Coordinator will aggregate with all other signer's
-    /// shares into the joint signature.
+    /// A FROST participant's signature share, which the Coordinator will
+    /// aggregate with all other signer's shares into the joint signature.
     pub type SignatureShare = frost::round2::SignatureShare<E>;
 
     /// Performed once by each participant selected for the signing operation.
@@ -81,7 +92,7 @@ pub mod round2 {
         frost::round2::sign(signing_package, signer_nonces, key_package)
     }
 
-    /// Performs re-randomized signing.
+    /// Like [`sign`], but for producing signatures with a randomized verification key.
     pub fn sign_randomized(
         signing_package: &SigningPackage,
         signer_nonces: &round1::SigningNonces,
@@ -97,39 +108,41 @@ pub mod round2 {
     }
 }
 
-/// A Schnorr signature on FROST(Ed25519, SHA-512).
-pub type Signature = frost_core::Signature<E>;
-
-/// Verifies each FROST(Ed25519, SHA-512) participant's signature share, and if all are valid,
+/// Verifies each FROST participant's signature share, and if all are valid,
 /// aggregates the shares into a signature to publish.
 ///
-/// Resulting signature is compatible with verification of a plain Schnorr
-/// signature.
+/// The resulting signature is an ordinary Schnorr signature with normal
+/// verification.
 ///
 /// This operation is performed by a coordinator that can communicate with all
 /// the signing participants before publishing the final signature. The
 /// coordinator can be one of the participants or a semi-trusted third party
 /// (who is trusted to not perform denial of service attacks, but does not learn
-/// any secret information). Note that because the coordinator is trusted to
-/// report misbehaving parties in order to avoid publishing an invalid
-/// signature, if the coordinator themselves is a signer and misbehaves, they
-/// can avoid that step. However, at worst, this results in a denial of
-/// service attack due to publishing an invalid signature.
+/// any secret information).
+///
+/// Note that because the coordinator is trusted to report misbehaving parties
+/// in order to avoid publishing an invalid signature, if the coordinator
+/// themselves is a signer and misbehaves, they can avoid that step. However, at
+/// worst, this results in a denial of service attack due to publishing an
+/// invalid signature.
 pub fn aggregate(
     signing_package: &SigningPackage,
     signature_shares: &HashMap<Identifier, round2::SignatureShare>,
     pubkeys: &keys::PublicKeyPackage,
-) -> Result<Signature, Error> {
-    frost::aggregate(signing_package, signature_shares, pubkeys)
+) -> Result<Signature<SpendAuth>, Error> {
+    let frost_sig = frost::aggregate(signing_package, signature_shares, pubkeys)?;
+    Ok(frost_sig.serialize())
 }
 
+/// Like [`aggregate`], but for generating signatures with a randomized
+/// verification key.
 pub fn aggregate_randomized(
     signing_package: &SigningPackage,
     signature_shares: &HashMap<Identifier, round2::SignatureShare>,
     pubkeys: &keys::PublicKeyPackage,
     randomizer: crate::Fr,
-) -> Result<Signature, Error> {
-    frost_rerandomized::aggregate(
+) -> Result<Signature<SpendAuth>, Error> {
+    let frost_sig = frost_rerandomized::aggregate(
         signing_package,
         signature_shares,
         pubkeys,
@@ -137,11 +150,6 @@ pub fn aggregate_randomized(
             pubkeys.group_public(),
             frost_rerandomized::Randomizer::from_scalar(randomizer),
         ),
-    )
+    )?;
+    Ok(frost_sig.serialize())
 }
-
-/// A signing key for a Schnorr signature on FROST(Ed25519, SHA-512).
-pub type SigningKey = frost_core::SigningKey<E>;
-
-/// A valid verifying key for Schnorr signatures on FROST(Ed25519, SHA-512).
-pub type VerifyingKey = frost_core::VerifyingKey<E>;

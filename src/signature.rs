@@ -99,6 +99,14 @@ impl<D: Domain> TryFrom<&[u8]> for Signature<D> {
     }
 }
 
+impl<D: Domain> TryFrom<Vec<u8>> for Signature<D> {
+    type Error = Error;
+
+    fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
+        value.as_slice().try_into()
+    }
+}
+
 impl<D: Domain> std::cmp::PartialEq for Signature<D> {
     fn eq(&self, other: &Self) -> bool {
         self.bytes == other.bytes

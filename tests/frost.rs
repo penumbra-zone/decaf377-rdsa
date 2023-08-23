@@ -98,14 +98,11 @@ fn simple_dkg_and_signing_flow() -> anyhow::Result<()> {
 
     // Aggregate the signature shares
 
-    let signature_bytes = frost::aggregate(
+    let signature = frost::aggregate(
         &signing_package,
         &sign_round2_signature_shares,
         public_key_packages.values().next().unwrap(),
-    )?
-    .serialize();
-
-    let signature = Signature::<SpendAuth>::from(signature_bytes);
+    )?;
 
     let vk_bytes = public_key_packages
         .values()
@@ -148,15 +145,12 @@ fn simple_dkg_and_signing_flow() -> anyhow::Result<()> {
 
     // Aggregate the signature shares
 
-    let signature_bytes = frost::aggregate_randomized(
+    let signature = frost::aggregate_randomized(
         &signing_package,
         &sign_round2_signature_shares,
         public_key_packages.values().next().unwrap(),
         r.clone(),
-    )?
-    .serialize();
-
-    let signature = Signature::<SpendAuth>::from(signature_bytes);
+    )?;
 
     // Use r to randomize the verification key independently of FROST code
     let r_vk = vk.randomize(&r);
