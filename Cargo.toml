@@ -1,7 +1,7 @@
 [package]
 name = "decaf377-rdsa"
 edition = "2021"
-version = "0.8.1"
+version = "0.9.0"
 authors = ["Penumbra Labs <team@penumbralabs.xyz>"]
 readme = "README.md"
 license = "MIT OR Apache-2.0"
@@ -19,14 +19,6 @@ thiserror = "1.0"
 ark-serialize = "0.4"
 ark-ff = { version = "0.4", default-features = false }
 hex = "0.4"
-
-frost-core = { git = "https://github.com/ZcashFoundation/frost/", rev = "60d9942f360e36e347513590a62cd7b850966848", features = [
-    "serde",
-] }
-frost-rerandomized = { git = "https://github.com/ZcashFoundation/frost/", rev = "60d9942f360e36e347513590a62cd7b850966848", features = [
-    "serde",
-] }
-
 
 # Frost deps
 # TODO: make optional ? use published versions?
