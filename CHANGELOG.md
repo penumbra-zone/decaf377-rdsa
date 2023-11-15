@@ -2,6 +2,14 @@
 
 Entries are listed in reverse chronological order.
 
+# 0.8.1
+
+* Improve nonce generation and add `sign_deterministic`.
+
+# 0.8.0
+
+* Add experimental FROST support (may be removed later).
+
 # 0.7.0
 
 * Use 0.5 series of decaf377 dependencies.
