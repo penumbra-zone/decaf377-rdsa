@@ -1,7 +1,6 @@
 #![doc = include_str!("../README.md")]
 
 pub mod batch;
-pub mod frost;
 
 mod domain;
 mod error;
