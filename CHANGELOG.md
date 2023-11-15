@@ -2,6 +2,11 @@
 
 Entries are listed in reverse chronological order.
 
+# 0.9.0
+
+* Delete experimental FROST support (will move to another crate).
+* Add missing Serde traits on Domain marker types.
+
 # 0.8.1
 
 * Improve nonce generation and add `sign_deterministic`.
