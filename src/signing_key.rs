@@ -144,20 +144,32 @@ impl<D: Domain> SigningKey<D> {
     /// Create a signature for domain `D` on `msg` using this `SigningKey`.
     // Similar to signature::Signer but without boxed errors.
     pub fn sign<R: RngCore + CryptoRng>(&self, mut rng: R, msg: &[u8]) -> Signature<D> {
+        let mut bonus_randomness = [0u8; 48];
+        rng.fill_bytes(&mut bonus_randomness);
+        self.sign_inner(&bonus_randomness, msg)
+    }
+
+    /// Create a signature for domain `D` on `msg` using this `SigningKey`.
+    ///
+    /// Prefer `sign`, unless you know you need deterministic signatures.
+    pub fn sign_deterministic(&self, msg: &[u8]) -> Signature<D> {
+        let bonus_randomness = [0u8; 48];
+        self.sign_inner(&bonus_randomness, msg)
+    }
+
+    fn sign_inner(&self, bonus_randomness: &[u8; 48], msg: &[u8]) -> Signature<D> {
         use crate::HStar;
 
-        // Choose a byte sequence uniformly at random of length (\ell_H + 128)/8
-        // bytes, where \ell_H is the length of the hash output in bits.
-        //
-        // For decaf377-reddsa this is (512 + 128)/8 = 80.
-        let random_bytes = {
-            let mut bytes = [0; 80];
-            rng.fill_bytes(&mut bytes);
-            bytes
-        };
-
+        // We deviate from RedDSA as specified in the Zcash protocol spec and instead
+        // use a construction in line with Trevor Perrin's synthetic nonces:
+        // https://moderncrypto.org/mail-archive/curves/2017/000925.html
+        // Rather than choosing T to be 80 random bytes (\ell_H + 128)/8 as in RedDSA,
+        // we choose T to be 32-byte sk || 48-byte bonus_randomness.
+        // In this way, even in the case of an RNG failure, we fall back to secure but
+        // deterministic signing.
         let nonce = HStar::default()
-            .update(&random_bytes[..])
+            .update(&self.sk.to_bytes()[..])
+            .update(&bonus_randomness[..])
             .update(&self.pk.bytes.bytes[..]) // XXX ugly
             .update(msg)
             .finalize();
