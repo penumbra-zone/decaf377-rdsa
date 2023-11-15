@@ -11,11 +11,13 @@ pub trait Domain: private::Sealed {}
 
 /// A type variable corresponding to Zcash's `BindingSig`.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Binding {}
 impl Domain for Binding {}
 
 /// A type variable corresponding to Zcash's `SpendAuthSig`.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum SpendAuth {}
 impl Domain for SpendAuth {}
 
