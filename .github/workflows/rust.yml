@@ -30,7 +30,7 @@ jobs:
       - name: Load rust cache
         uses: astriaorg/buildjet-rust-cache@v2.5.1
       - name: Run tests with nextest
-        run: cargo nextest run --cargo-profile ci --profile ci
+        run: cargo nextest run --cargo-profile ci
         env:
           CARGO_TERM_COLOR: always
 
