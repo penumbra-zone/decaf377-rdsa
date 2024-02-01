@@ -9,19 +9,23 @@ description = "decaf377-rdsa is a randomizable signature scheme using the decaf3
 repository = "https://github.com/penumbra-zone/decaf377-rdsa"
 
 [dependencies]
-blake2b_simd = "0.5"
+# No Alloc, No Std
+blake2b_simd = { version = "0.5", default-features = false }
 byteorder = "1.3"
-decaf377 = { version = "0.5", default-features = false }
-digest = "0.9"
-rand_core = "0.6"
-serde = { version = "1", optional = true, features = ["derive"] }
+cfg-if = "1.0"
+decaf377 = { git = "https://github.com/penumbra-zone/decaf377", tag = "v0.8.0", default-features = false }
+digest = { version = "0.9", default-features = false }
+rand_core = { version = "0.6", default-features = false }
 thiserror = "1.0"
-ark-serialize = "0.4"
-ark-ff = { version = "0.4", default-features = false }
-hex = "0.4"
+hex = { version = "0.4", default-features = false }
+# Only to satisfy Cargo
+zeroize = { version = "1.7", default-features = false }
+# Alloc, No Std
+ark-ff = { version = "0.4", optional = true, default-features = false }
+ark-serialize = { version = "0.4", optional = true }
+# Std
+serde = { version = "1", optional = true, features = ["derive"] }
 
-# Frost deps
-# TODO: make optional ? use published versions?
 [dev-dependencies]
 bincode = "1"
 criterion = "0.3"
@@ -37,5 +41,12 @@ harness = false
 
 [features]
 default = ["serde", "std"]
-std = ["ark-ff/std"]
+alloc = ["ark-ff", "ark-serialize"]
+std = ["alloc", "ark-ff/std", "blake2b_simd/std", "byteorder/std", "decaf377/arkworks", "digest/std", "hex/std", "rand_core/std"]
 parallel = ["ark-ff/parallel", "decaf377/parallel"]
+
+# Create profile for running checks in CI that are mostly "release" mode,
+# but also checking the `debug_assert `lines.
+[profile.ci]
+inherits = "release"
+debug-assertions = true
