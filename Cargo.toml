@@ -11,7 +11,7 @@ repository = "https://github.com/penumbra-zone/decaf377-rdsa"
 [dependencies]
 blake2b_simd = "0.5"
 byteorder = "1.3"
-decaf377 = {default-features = false, git = "https://github.com/penumbra-zone/decaf377", rev = "c8f6a6c5e83736813e95277e82f546bff55ae90a"}
+decaf377 = {git = "https://github.com/penumbra-zone/decaf377", rev = "c8f6a6c5e83736813e95277e82f546bff55ae90a", features = ["arkworks", "r1cs"]}
 digest = "0.9"
 rand_core = "0.6"
 serde = { version = "1", optional = true, features = ["derive"] }

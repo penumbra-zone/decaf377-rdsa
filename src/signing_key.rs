@@ -1,7 +1,6 @@
 use std::convert::{TryFrom, TryInto};
 
-use ark_ff::PrimeField;
-use decaf377::{FieldExt, Fr};
+use decaf377::Fr;
 use rand_core::{CryptoRng, RngCore};
 
 use crate::{Binding, Domain, Error, Signature, SpendAuth, VerificationKey};

@@ -11,7 +11,7 @@
 use std::convert::TryFrom;
 
 use ark_ff::Zero;
-use decaf377::{Element, FieldExt, Fr};
+use decaf377::{Element, Fr};
 use rand_core::{CryptoRng, RngCore};
 
 use crate::{
@@ -190,7 +190,7 @@ impl Verifier {
                 Inner::Binding { sig, c, .. } => (sig.s_bytes(), sig.r_bytes(), c),
             };
 
-            let s = Fr::from_bytes(s_bytes).map_err(|_| Error::InvalidSignature)?;
+            let s = Fr::from_bytes_checked(&s_bytes).map_err(|_| Error::InvalidSignature)?;
             let R = decaf377::Encoding(r_bytes)
                 .vartime_decompress()
                 .map_err(|_| Error::InvalidSignature)?;
