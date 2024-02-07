@@ -10,7 +10,7 @@
 
 use std::convert::TryFrom;
 
-use decaf377::{Element, FieldExt, Fr};
+use decaf377::{Element, Fr};
 use rand_core::{CryptoRng, RngCore};
 
 use crate::{
@@ -180,8 +180,8 @@ impl Verifier {
         let mut VKs = Vec::with_capacity(n);
         let mut R_coeffs = Vec::with_capacity(self.signatures.len());
         let mut Rs = Vec::with_capacity(self.signatures.len());
-        let mut P_spendauth_coeff = Fr::zero();
-        let mut P_binding_coeff = Fr::zero();
+        let mut P_spendauth_coeff = Fr::ZERO;
+        let mut P_binding_coeff = Fr::ZERO;
 
         for item in self.signatures.iter() {
             let (s_bytes, r_bytes, c) = match item.inner {
@@ -189,7 +189,7 @@ impl Verifier {
                 Inner::Binding { sig, c, .. } => (sig.s_bytes(), sig.r_bytes(), c),
             };
 
-            let s = Fr::from_bytes(s_bytes).map_err(|_| Error::InvalidSignature)?;
+            let s = Fr::from_bytes_checked(&s_bytes).map_err(|_| Error::InvalidSignature)?;
             let R = decaf377::Encoding(r_bytes)
                 .vartime_decompress()
                 .map_err(|_| Error::InvalidSignature)?;

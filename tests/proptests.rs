@@ -130,7 +130,6 @@ proptest! {
         let mut rng = ChaChaRng::seed_from_u64(rng_seed);
 
         let r = {
-            use ark_ff::PrimeField;
             let mut bytes = [0; 64];
             rng.fill_bytes(&mut bytes[..]);
             Fr::from_le_bytes_mod_order(&bytes)
