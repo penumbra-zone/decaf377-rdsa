@@ -2,20 +2,21 @@
 #![doc = include_str!("../README.md")]
 use cfg_if::cfg_if;
 
+mod domain;
+mod hash;
+use hash::HStar;
+
+pub use domain::{Binding, Domain, SpendAuth};
+
 cfg_if! {
     if #[cfg(feature = "std")] {
         pub mod batch;
 
-        mod domain;
         mod error;
-        mod hash;
         mod signature;
         mod signing_key;
         mod verification_key;
 
-        use hash::HStar;
-
-        pub use domain::{Binding, Domain, SpendAuth};
         pub use error::Error;
         pub use signature::Signature;
         pub use signing_key::SigningKey;

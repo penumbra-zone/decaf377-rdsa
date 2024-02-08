@@ -222,7 +222,8 @@ impl<D: Domain> VerificationKey<D> {
             .vartime_decompress()
             .map_err(|_| Error::InvalidSignature)?;
 
-        let s = Fr::from_bytes_checked(&signature.s_bytes()).map_err(|_| Error::InvalidSignature)?;
+        let s =
+            Fr::from_bytes_checked(&signature.s_bytes()).map_err(|_| Error::InvalidSignature)?;
 
         // XXX rewrite as normal double scalar mul
         // Verify check is h * ( - s * B + R  + c * A) == 0
