@@ -30,17 +30,19 @@ pub(crate) mod private {
         ))
     }
 
-    pub trait Sealed: Copy + Clone + Eq + PartialEq + std::fmt::Debug {
+    pub trait Sealed: Copy + Clone + Eq + PartialEq + core::fmt::Debug {
         fn basepoint() -> decaf377::Element;
     }
+
     impl Sealed for Binding {
         fn basepoint() -> decaf377::Element {
             hash_to_group(b"decaf377-rdsa-binding")
         }
     }
+
     impl Sealed for SpendAuth {
         fn basepoint() -> decaf377::Element {
-            decaf377::basepoint()
+            decaf377::Element::GENERATOR
         }
     }
 }
