@@ -1,13 +1,12 @@
-use std::{
-    cmp::Ord,
-    convert::TryFrom,
+use core::{
+    cmp::{self, Ord},
     hash::{Hash, Hasher},
     marker::PhantomData,
 };
 
 use decaf377::Fr;
 
-use crate::{domain::Sealed, Binding, Domain, Error, Signature, SpendAuth};
+use crate::{domain::Sealed, Domain, Error, Signature, SpendAuth};
 
 /// A refinement type for `[u8; 32]` indicating that the bytes represent
 /// an encoding of a `decaf377-rdsa` verification key.
@@ -51,13 +50,13 @@ impl<D: Domain> Hash for VerificationKeyBytes<D> {
 }
 
 impl<D: Domain> PartialOrd for VerificationKeyBytes<D> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
         self.bytes.partial_cmp(&other.bytes)
     }
 }
 
 impl<D: Domain> Ord for VerificationKeyBytes<D> {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+    fn cmp(&self, other: &Self) -> cmp::Ordering {
         self.bytes.cmp(&other.bytes)
     }
 }
@@ -84,13 +83,13 @@ impl<D: Domain> Hash for VerificationKey<D> {
 }
 
 impl<D: Domain> PartialOrd for VerificationKey<D> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
         self.bytes.partial_cmp(&other.bytes)
     }
 }
 
 impl<D: Domain> Ord for VerificationKey<D> {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+    fn cmp(&self, other: &Self) -> cmp::Ordering {
         self.bytes.cmp(&other.bytes)
     }
 }
@@ -212,7 +211,7 @@ impl<D: Domain> VerificationKey<D> {
 
     /// Convenience method for identity checks.
     pub fn is_identity(&self) -> bool {
-        self.point.is_identity()
+        self.point == decaf377::Element::IDENTITY
     }
 
     /// Verify a purported `signature` with a prehashed challenge.
@@ -232,7 +231,7 @@ impl<D: Domain> VerificationKey<D> {
         let cA = self.point * c;
         let check = sB - cA - R;
 
-        if check.is_identity() {
+        if check == decaf377::Element::IDENTITY {
             Ok(())
         } else {
             Err(Error::InvalidSignature)
@@ -240,49 +239,59 @@ impl<D: Domain> VerificationKey<D> {
     }
 }
 
-impl<D: Domain> std::cmp::PartialEq for VerificationKey<D> {
+impl<D: Domain> PartialEq for VerificationKey<D> {
     fn eq(&self, other: &Self) -> bool {
         self.bytes.eq(&other.bytes)
     }
 }
 
-impl<D: Domain> std::cmp::PartialEq for VerificationKeyBytes<D> {
+impl<D: Domain> PartialEq for VerificationKeyBytes<D> {
     fn eq(&self, other: &Self) -> bool {
         self.bytes.eq(&other.bytes)
     }
 }
 
-impl<D: Domain> std::cmp::Eq for VerificationKey<D> {}
-impl<D: Domain> std::cmp::Eq for VerificationKeyBytes<D> {}
+impl<D: Domain> Eq for VerificationKey<D> {}
+impl<D: Domain> Eq for VerificationKeyBytes<D> {}
 
-impl std::fmt::Debug for VerificationKey<Binding> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple("VerificationKey<Binding>")
-            .field(&hex::encode(&<[u8; 32]>::from(*self)))
-            .finish()
+#[cfg(feature = "std")]
+mod std_only {
+    use super::*;
+
+    use crate::Binding;
+
+    impl std::fmt::Debug for VerificationKey<Binding> {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_tuple("VerificationKey<Binding>")
+                .field(&hex::encode(&<[u8; 32]>::from(*self)))
+                .finish()
+        }
+    }
+
+    impl std::fmt::Debug for VerificationKey<SpendAuth> {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_tuple("VerificationKey<SpendAuth>")
+                .field(&hex::encode(&<[u8; 32]>::from(*self)))
+                .finish()
+        }
+    }
+
+    impl std::fmt::Debug for VerificationKeyBytes<Binding> {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_tuple("VerificationKeyBytes<Binding>")
+                .field(&hex::encode(&<[u8; 32]>::from(*self)))
+                .finish()
+        }
+    }
+
+    impl std::fmt::Debug for VerificationKeyBytes<SpendAuth> {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_tuple("VerificationKeyBytes<SpendAuth>")
+                .field(&hex::encode(&<[u8; 32]>::from(*self)))
+                .finish()
+        }
     }
 }
 
-impl std::fmt::Debug for VerificationKey<SpendAuth> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple("VerificationKey<SpendAuth>")
-            .field(&hex::encode(&<[u8; 32]>::from(*self)))
-            .finish()
-    }
-}
-
-impl std::fmt::Debug for VerificationKeyBytes<Binding> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple("VerificationKeyBytes<Binding>")
-            .field(&hex::encode(&<[u8; 32]>::from(*self)))
-            .finish()
-    }
-}
-
-impl std::fmt::Debug for VerificationKeyBytes<SpendAuth> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple("VerificationKeyBytes<SpendAuth>")
-            .field(&hex::encode(&<[u8; 32]>::from(*self)))
-            .finish()
-    }
-}
+#[cfg(feature = "std")]
+pub use std_only::*;
