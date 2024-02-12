@@ -1,9 +1,7 @@
-use std::convert::{TryFrom, TryInto};
-
 use decaf377::Fr;
 use rand_core::{CryptoRng, RngCore};
 
-use crate::{Binding, Domain, Error, Signature, SpendAuth, VerificationKey};
+use crate::{Domain, Error, Signature, SpendAuth, VerificationKey};
 
 /// A `decaf377-rdsa` signing key.
 #[derive(Copy, Clone)]
@@ -14,22 +12,6 @@ use crate::{Binding, Domain, Error, Signature, SpendAuth, VerificationKey};
 pub struct SigningKey<D: Domain> {
     sk: Fr,
     pk: VerificationKey<D>,
-}
-
-impl std::fmt::Debug for SigningKey<Binding> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple("SigningKey<Binding>")
-            .field(&hex::encode(&<[u8; 32]>::from(*self)))
-            .finish()
-    }
-}
-
-impl std::fmt::Debug for SigningKey<SpendAuth> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple("SigningKey<SpendAuth>")
-            .field(&hex::encode(&<[u8; 32]>::from(*self)))
-            .finish()
-    }
 }
 
 impl<'a, D: Domain> From<&'a SigningKey<D>> for VerificationKey<D> {
@@ -63,8 +45,7 @@ impl<D: Domain> TryFrom<[u8; 32]> for SigningKey<D> {
     type Error = Error;
 
     fn try_from(bytes: [u8; 32]) -> Result<Self, Self::Error> {
-        use ark_serialize::CanonicalDeserialize;
-        let sk = Fr::deserialize_compressed(&bytes[..]).map_err(|_| Error::MalformedSigningKey)?;
+        let sk = Fr::from_bytes_checked(&bytes).map_err(|_| Error::MalformedSigningKey)?;
         Ok(Self::new_from_field(sk))
     }
 }
@@ -186,3 +167,30 @@ impl<D: Domain> SigningKey<D> {
         Signature::from_parts(r_bytes, s_bytes)
     }
 }
+
+#[cfg(feature = "std")]
+mod std_only {
+    use super::*;
+    use std::fmt;
+
+    use crate::Binding;
+
+    impl fmt::Debug for SigningKey<Binding> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.debug_tuple("SigningKey<Binding>")
+                .field(&hex::encode(&<[u8; 32]>::from(*self)))
+                .finish()
+        }
+    }
+
+    impl fmt::Debug for SigningKey<SpendAuth> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.debug_tuple("SigningKey<SpendAuth>")
+                .field(&hex::encode(&<[u8; 32]>::from(*self)))
+                .finish()
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+pub use std_only::*;

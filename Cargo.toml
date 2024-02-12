@@ -11,8 +11,7 @@ repository = "https://github.com/penumbra-zone/decaf377-rdsa"
 [dependencies]
 # No Alloc, No Std
 blake2b_simd = { version = "0.5", default-features = false }
-cfg-if = "1.0"
-decaf377 = { git = "https://github.com/penumbra-zone/decaf377", rev = "f8c185eb40d2ece19783ce02b99861e85d304e92", default-features = false }
+decaf377 = { git = "https://github.com/penumbra-zone/decaf377", rev = "e26c88c896d9e3da4677bfe9ba127ce45979e0b2", default-features = false }
 digest = { version = "0.9", default-features = false }
 rand_core = { version = "0.6", default-features = false }
 hex = { version = "0.4", default-features = false }
@@ -39,8 +38,7 @@ name = "bench"
 harness = false
 
 [features]
-#default = ["serde", "std"]
-default = []
+default = ["serde", "std"]
 alloc = ["ark-ff", "ark-serialize"]
 std = ["alloc", "ark-ff/std", "blake2b_simd/std", "decaf377/arkworks", "digest/std", "hex/std", "rand_core/std", "thiserror"]
 parallel = ["ark-ff/parallel", "decaf377/parallel"]
