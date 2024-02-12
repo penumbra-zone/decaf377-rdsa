@@ -39,7 +39,8 @@ name = "bench"
 harness = false
 
 [features]
-default = ["serde", "std"]
+#default = ["serde", "std"]
+default = []
 alloc = ["ark-ff", "ark-serialize"]
 std = ["alloc", "ark-ff/std", "blake2b_simd/std", "decaf377/arkworks", "digest/std", "hex/std", "rand_core/std", "thiserror"]
 parallel = ["ark-ff/parallel", "decaf377/parallel"]
