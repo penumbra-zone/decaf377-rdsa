@@ -1,18 +1,33 @@
-use thiserror::Error;
+use core::fmt;
 
 /// An error related to `decaf377-rdsa` signatures.
-#[derive(Error, Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Error {
     /// The encoding of a signing key was malformed.
-    #[error("Malformed signing key encoding.")]
     MalformedSigningKey,
     /// The encoding of a verification key was malformed.
-    #[error("Malformed verification key encoding.")]
     MalformedVerificationKey,
     /// Signature verification failed.
-    #[error("Invalid signature.")]
     InvalidSignature,
     /// Occurs when reading from a slice of the wrong length.
-    #[error("Wrong slice length, expected {expected}, found {found}")]
     WrongSliceLength { expected: usize, found: usize },
 }
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::MalformedSigningKey => f.write_str("Malformed signing key encoding."),
+            Self::MalformedVerificationKey => f.write_str("Malformed verification key encoding."),
+            Self::InvalidSignature => f.write_str("Invalid signature."),
+            Self::WrongSliceLength { expected, found } => {
+                f.write_str("Wrong slice length, expected ")?;
+                expected.fmt(f)?;
+                f.write_str(", found ")?;
+                found.fmt(f)
+            }
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for Error {}

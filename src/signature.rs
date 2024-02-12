@@ -1,7 +1,6 @@
-use std::convert::TryFrom;
-use std::marker::PhantomData;
+use core::{cmp, convert::TryFrom, marker::PhantomData};
 
-use crate::{Binding, Domain, Error, SpendAuth};
+use crate::{Domain, Error};
 
 /// A `decaf377-rdsa` signature.
 #[derive(Copy, Clone)]
@@ -45,22 +44,6 @@ impl<D: Domain> Signature<D> {
     }
 }
 
-impl std::fmt::Debug for Signature<Binding> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple("Signature<Binding>")
-            .field(&hex::encode(&<[u8; 64]>::from(*self)))
-            .finish()
-    }
-}
-
-impl std::fmt::Debug for Signature<SpendAuth> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple("Signature<SpendAuth>")
-            .field(&hex::encode(&<[u8; 64]>::from(*self)))
-            .finish()
-    }
-}
-
 impl<D: Domain> From<[u8; 64]> for Signature<D> {
     fn from(bytes: [u8; 64]) -> Signature<D> {
         Signature {
@@ -73,12 +56,6 @@ impl<D: Domain> From<[u8; 64]> for Signature<D> {
 impl<D: Domain> From<Signature<D>> for [u8; 64] {
     fn from(sig: Signature<D>) -> [u8; 64] {
         sig.to_bytes()
-    }
-}
-
-impl<D: Domain> From<Signature<D>> for Vec<u8> {
-    fn from(sig: Signature<D>) -> Vec<u8> {
-        sig.to_bytes().into()
     }
 }
 
@@ -99,18 +76,51 @@ impl<D: Domain> TryFrom<&[u8]> for Signature<D> {
     }
 }
 
-impl<D: Domain> TryFrom<Vec<u8>> for Signature<D> {
-    type Error = Error;
-
-    fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
-        value.as_slice().try_into()
-    }
-}
-
-impl<D: Domain> std::cmp::PartialEq for Signature<D> {
+impl<D: Domain> cmp::PartialEq for Signature<D> {
     fn eq(&self, other: &Self) -> bool {
         self.bytes == other.bytes
     }
 }
 
-impl<D: Domain> std::cmp::Eq for Signature<D> {}
+impl<D: Domain> cmp::Eq for Signature<D> {}
+
+#[cfg(feature = "std")]
+mod std_only {
+    use super::*;
+    use std::fmt;
+
+    use crate::{Binding, Signature, SpendAuth};
+
+    impl<D: Domain> TryFrom<Vec<u8>> for Signature<D> {
+        type Error = Error;
+
+        fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
+            value.as_slice().try_into()
+        }
+    }
+
+    impl<D: Domain> From<Signature<D>> for Vec<u8> {
+        fn from(sig: Signature<D>) -> Vec<u8> {
+            sig.to_bytes().into()
+        }
+    }
+
+    impl fmt::Debug for Signature<Binding> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.debug_tuple("Signature<Binding>")
+                .field(&hex::encode(&<[u8; 64]>::from(*self)))
+                .finish()
+        }
+    }
+
+    impl fmt::Debug for Signature<SpendAuth> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.debug_tuple("Signature<SpendAuth>")
+                .field(&hex::encode(&<[u8; 64]>::from(*self)))
+                .finish()
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+pub use std_only::*;
