@@ -42,7 +42,7 @@ pub(crate) mod private {
     }
     impl Sealed for SpendAuth {
         fn basepoint() -> decaf377::Element {
-            decaf377::basepoint()
+            decaf377::Element::GENERATOR
         }
     }
 }
