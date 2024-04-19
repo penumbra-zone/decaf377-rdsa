@@ -42,6 +42,7 @@ default = ["serde", "std"]
 alloc = ["ark-ff", "ark-serialize"]
 std = ["alloc", "ark-ff/std", "blake2b_simd/std", "decaf377/arkworks", "digest/std", "hex/std", "rand_core/std", "thiserror"]
 parallel = ["ark-ff/parallel", "decaf377/parallel"]
+u32_backend = ["decaf377/u32_backend"]
 
 # Create profile for running checks in CI that are mostly "release" mode,
 # but also checking the `debug_assert `lines.
