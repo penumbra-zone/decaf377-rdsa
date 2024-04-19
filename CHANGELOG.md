@@ -2,6 +2,10 @@
 
 Entries are listed in reverse chronological order.
 
+# 0.10.0
+
+* Add `u32_backend` feature.
+
 # 0.9.0
 
 * Delete experimental FROST support (will move to another crate).
