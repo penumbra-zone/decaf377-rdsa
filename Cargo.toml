@@ -1,7 +1,7 @@
 [package]
 name = "decaf377-rdsa"
 edition = "2021"
-version = "0.10.0"
+version = "0.11.0"
 authors = ["Penumbra Labs <team@penumbralabs.xyz>"]
 readme = "README.md"
 license = "MIT OR Apache-2.0"
@@ -11,7 +11,7 @@ repository = "https://github.com/penumbra-zone/decaf377-rdsa"
 [dependencies]
 # No Alloc, No Std
 blake2b_simd = { version = "0.5", default-features = false }
-decaf377 = { version = "0.10.0", default-features = false }
+decaf377 = { version = "0.10.1", default-features = false }
 digest = { version = "0.9", default-features = false }
 rand_core = { version = "0.6", default-features = false }
 hex = { version = "0.4", default-features = false }

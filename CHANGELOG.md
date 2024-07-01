@@ -2,6 +2,10 @@
 
 Entries are listed in reverse chronological order.
 
+# 0.11.0
+
+* Update decaf377 version to 0.10.1
+
 # 0.10.0
 
 * Add `u32_backend` feature.
