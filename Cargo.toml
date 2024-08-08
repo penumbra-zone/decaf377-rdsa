@@ -11,7 +11,7 @@ repository = "https://github.com/penumbra-zone/decaf377-rdsa"
 [dependencies]
 # No Alloc, No Std
 blake2b_simd = { version = "0.5", default-features = false }
-decaf377 = { version = "0.10.1", default-features = false }
+decaf377 = { git = "https://github.com/penumbra-zone/decaf377", branch = "enable-lto", default-features = false }
 digest = { version = "0.9", default-features = false }
 rand_core = { version = "0.6", default-features = false }
 hex = { version = "0.4", default-features = false }
